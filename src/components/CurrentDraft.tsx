@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import type { GenerationOptions } from "@/types";
 import {
   estimateContextTokens,
@@ -7,9 +8,7 @@ import {
   getDocumentById,
 } from "@/data/knowledge-base";
 import { legalIssues } from "@/data/legal-issues";
-import {
-  outputLabels,
-} from "@/data/generation-options";
+import { outputLabels } from "@/data/generation-options";
 
 interface CurrentDraftProps {
   selectedDocumentIds: string[];
@@ -20,7 +19,7 @@ interface CurrentDraftProps {
 
 function formatVolume(tokens: number) {
   const pages = Math.max(1, Math.round(tokens / 500));
-  return `약 ${pages}쪽 분량`;
+  return `약 ${pages}쪽`;
 }
 
 export default function CurrentDraft({
@@ -31,6 +30,27 @@ export default function CurrentDraft({
 }: CurrentDraftProps) {
   const selectedCollections = getCollectionsForDocuments(selectedDocumentIds);
   const volumeTokens = estimateContextTokens(selectedDocumentIds);
+
+  const documentsByCollection = useMemo(() => {
+    return selectedCollections.map((collection) => ({
+      collection,
+      documents: selectedDocumentIds
+        .map((id) => getDocumentById(id))
+        .filter(
+          (entry): entry is NonNullable<typeof entry> =>
+            entry !== null && entry.collection.id === collection.id
+        )
+        .map((entry) => entry.document),
+    }));
+  }, [selectedCollections, selectedDocumentIds]);
+
+  const selectedIssues = useMemo(
+    () =>
+      selectedIssueIds
+        .map((id) => legalIssues.find((issue) => issue.id === id))
+        .filter((issue): issue is NonNullable<typeof issue> => issue !== undefined),
+    [selectedIssueIds]
+  );
 
   const enabledOutputs = (
     Object.entries(options.outputs) as Array<
@@ -46,90 +66,123 @@ export default function CurrentDraft({
     !hasDraft;
 
   return (
-    <aside className="academic-shadow sticky top-6 rounded-sm border border-border bg-paper">
-      <div className="border-b border-border bg-highlight/50 px-4 py-3">
+    <aside className="academic-shadow sticky top-6 rounded-sm border border-border bg-paper text-[13px]">
+      <div className="border-b border-border bg-highlight/40 px-3.5 py-3">
         <p className="text-[10px] font-semibold tracking-[0.14em] text-accent uppercase">
           Current Draft
         </p>
-        <h2 className="font-serif text-base font-semibold text-ink">
+        <h2 className="font-serif text-[15px] font-semibold text-ink">
           현재 초안
         </h2>
-        <p className="mt-0.5 text-xs text-ink-faint">
+        <p className="mt-0.5 text-[11px] leading-relaxed text-ink-faint">
           {hasDraft
-            ? "검수 대기 중인 출제 초안"
+            ? "검수 대기 중"
             : isEmpty
-              ? "자료와 쟁점을 선택하면 초안 구성이 표시됩니다"
-              : "초안 작성 준비 완료"}
+              ? "지식 베이스와 평가 쟁점을 지정하세요"
+              : "초안 작성 준비됨"}
         </p>
       </div>
 
-      <div className="divide-y divide-border">
+      {isEmpty && (
+        <div className="border-b border-border/80 bg-paper-dark/30 px-3.5 py-2.5">
+          <ol className="space-y-1 text-[11px] leading-relaxed text-ink-muted">
+            <li>1. 참고 자료 편람</li>
+            <li>2. 평가 쟁점 설계</li>
+            <li>3. 출제 초안 작성</li>
+          </ol>
+        </div>
+      )}
+
+      <div className="divide-y divide-border/80">
         <DraftSection
           title="참고 자료"
           count={selectedDocumentIds.length}
-          emptyText="선택된 참고 문서 없음"
+          emptyText="편람된 문서 없음"
         >
-          {selectedCollections.length > 0 && (
-            <p className="mb-2 text-xs text-ink-faint">
-              {selectedCollections.map((c) => c.title).join(" · ")}
-            </p>
-          )}
-          {selectedDocumentIds.map((id) => {
-            const found = getDocumentById(id);
-            return (
-              <li key={id} className="text-sm text-ink-muted">
-                {found?.document.title ?? id}
-              </li>
-            );
-          })}
+          {documentsByCollection.map(({ collection, documents }) => (
+            <li key={collection.id} className="space-y-1">
+              <p className="text-[10px] font-medium tracking-wide text-ink-faint">
+                {collection.title}
+              </p>
+              <ul className="space-y-0.5 border-l border-border-dark/60 pl-2">
+                {documents.map((doc) => (
+                  <li
+                    key={doc.id}
+                    className="text-[12px] leading-snug text-ink-muted"
+                  >
+                    {doc.title}
+                  </li>
+                ))}
+              </ul>
+            </li>
+          ))}
         </DraftSection>
 
         <DraftSection
           title="평가 쟁점"
           count={selectedIssueIds.length}
-          emptyText="설계된 평가 쟁점 없음"
+          emptyText="설계된 쟁점 없음"
         >
-          {selectedIssueIds.map((id) => {
-            const issue = legalIssues.find((item) => item.id === id);
-            return (
-              <li key={id} className="text-sm text-ink-muted">
-                {issue?.name ?? id}
-              </li>
-            );
-          })}
+          <li className="flex flex-wrap gap-1">
+            {selectedIssues.map((issue) => (
+              <span
+                key={issue.id}
+                className="rounded-sm border border-ink/15 bg-ink/5 px-1.5 py-px text-[11px] text-ink-muted"
+              >
+                {issue.name}
+              </span>
+            ))}
+          </li>
         </DraftSection>
 
         <DraftSection
           title="초안 구성"
-          count={enabledOutputs.length}
-          emptyText="포함 항목 미지정"
+          count={enabledOutputs.length + 2}
+          emptyText="—"
+          hideWhenEmpty
         >
-          <li className="text-sm text-ink-muted">
-            용도: {options.purpose}
+          <li className="flex justify-between gap-2 text-[12px]">
+            <span className="text-ink-faint">용도</span>
+            <span className="text-ink-muted">{options.purpose}</span>
           </li>
-          <li className="text-sm text-ink-muted">
-            난이도: {options.difficulty}
+          <li className="flex justify-between gap-2 text-[12px]">
+            <span className="text-ink-faint">난이도</span>
+            <span className="text-ink-muted">{options.difficulty}</span>
           </li>
-          {enabledOutputs.map((label) => (
-            <li key={label} className="text-sm text-ink-muted">
-              {label}
+          {enabledOutputs.length > 0 && (
+            <li className="pt-0.5">
+              <p className="mb-1 text-[10px] text-ink-faint">포함 항목</p>
+              <ul className="space-y-0.5">
+                {enabledOutputs.map((label) => (
+                  <li
+                    key={label}
+                    className="text-[12px] leading-snug text-ink-muted"
+                  >
+                    · {label}
+                  </li>
+                ))}
+              </ul>
             </li>
-          ))}
+          )}
         </DraftSection>
 
-        <div className="px-4 py-4">
-          <h3 className="text-[11px] font-semibold tracking-[0.1em] text-ink-faint uppercase">
-            참고 분량
-          </h3>
-          <p className="mt-2 font-serif text-lg text-ink">
-            {selectedDocumentIds.length > 0 ? formatVolume(volumeTokens) : "—"}
-          </p>
-        </div>
+        {selectedDocumentIds.length > 0 && (
+          <div className="px-3.5 py-2.5">
+            <div className="flex items-baseline justify-between">
+              <span className="text-[10px] font-medium text-ink-faint">
+                참고 분량
+              </span>
+              <span className="font-serif text-sm text-ink">
+                {formatVolume(volumeTokens)}
+              </span>
+            </div>
+          </div>
+        )}
 
         {hasDraft && (
-          <div className="border-t border-border bg-paper-dark/40 px-4 py-3">
-            <p className="text-xs font-medium text-accent">
-              초안이 작성되었습니다. 본문에서 검수하세요.
+          <div className="border-t border-border/80 bg-paper-dark/30 px-3.5 py-2">
+            <p className="text-[11px] text-accent">
+              초안 작성 완료 · 본문에서 검수
             </p>
           </div>
         )}
@@ -143,24 +196,34 @@ function DraftSection({
   count,
   emptyText,
   children,
+  hideWhenEmpty,
 }: {
   title: string;
   count: number;
   emptyText: string;
   children: React.ReactNode;
+  hideWhenEmpty?: boolean;
 }) {
+  if (hideWhenEmpty && count === 0) return null;
+
+  const isEmpty = count === 0;
+
   return (
-    <div className="px-4 py-4">
-      <div className="mb-2 flex items-baseline justify-between">
-        <h3 className="text-[11px] font-semibold tracking-[0.08em] text-ink-faint">
+    <div className="px-3.5 py-2.5">
+      <div className="mb-1.5 flex items-baseline justify-between gap-2">
+        <h3 className="text-[10px] font-semibold tracking-[0.06em] text-ink-faint">
           {title}
         </h3>
-        <span className="text-xs text-ink-faint">{count}</span>
+        {!isEmpty && (
+          <span className="text-[10px] tabular-nums text-ink-faint">
+            {count}
+          </span>
+        )}
       </div>
-      {count === 0 ? (
-        <p className="text-sm italic text-ink-faint">{emptyText}</p>
+      {isEmpty ? (
+        <p className="text-[11px] italic text-ink-faint/90">{emptyText}</p>
       ) : (
-        <ul className="space-y-1.5">{children}</ul>
+        <ul className="space-y-2">{children}</ul>
       )}
     </div>
   );

@@ -16,8 +16,8 @@ const sourceBadgeLabels: Record<CollectionSource, string> = {
 };
 
 const sourceBadgeStyles: Record<CollectionSource, string> = {
-  PUBLIC: "border-ink/20 bg-ink/5 text-ink-muted",
-  PROFESSOR: "border-accent/30 bg-accent/10 text-accent",
+  PUBLIC: "border-ink/15 bg-ink/5 text-ink-muted",
+  PROFESSOR: "border-accent/25 bg-accent/8 text-accent",
   PRIVATE: "border-border-dark bg-paper-dark text-ink-faint",
 };
 
@@ -29,7 +29,7 @@ const groupLabels: Record<KnowledgeCollection["group"], string> = {
 function SourceBadge({ source }: { source: CollectionSource }) {
   return (
     <span
-      className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold tracking-wide ${sourceBadgeStyles[source]}`}
+      className={`shrink-0 rounded px-1.5 py-px text-[10px] font-medium tracking-wide ${sourceBadgeStyles[source]}`}
     >
       {sourceBadgeLabels[source]}
     </span>
@@ -57,84 +57,98 @@ function CollectionRow({
   const allSelected =
     collection.documents.length > 0 &&
     selectedInCollection === collection.documents.length;
+  const hasSelection = selectedInCollection > 0;
 
   return (
-    <div className="border-b border-border last:border-b-0">
+    <div
+      className={`border-b border-border last:border-b-0 ${
+        hasSelection && !isExpanded ? "border-l-2 border-l-accent/50" : "border-l-2 border-l-transparent"
+      }`}
+    >
       <button
         type="button"
         onClick={onToggleExpand}
         aria-expanded={isExpanded}
-        className="flex w-full items-start gap-3 px-5 py-4 text-left transition-colors hover:bg-highlight/50"
+        className={`flex w-full items-start gap-2.5 px-4 py-3 text-left transition-colors ${
+          hasSelection ? "bg-accent/[0.03]" : "hover:bg-highlight/40"
+        }`}
       >
         <span
-          className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center border border-border-dark bg-paper text-[10px] text-ink-faint"
+          className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center text-[11px] text-ink-faint"
           aria-hidden
         >
           {isExpanded ? "−" : "+"}
         </span>
 
         <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <h3 className="font-serif text-base font-medium text-ink">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <h3 className="font-serif text-[15px] font-medium leading-snug text-ink">
               {collection.title}
             </h3>
             <SourceBadge source={collection.source} />
-          </div>
-          <p className="mt-1 text-sm leading-relaxed text-ink-muted">
-            {collection.description}
-          </p>
-          <p className="mt-2 text-xs text-ink-faint">
-            {collection.documents.length}권
-            {selectedInCollection > 0 && (
-              <span className="ml-2 font-medium text-accent">
-                · {selectedInCollection}권 편람 중
+            <span className="text-[11px] text-ink-faint">
+              {collection.documents.length}권
+            </span>
+            {hasSelection && (
+              <span className="text-[11px] font-medium text-accent">
+                {selectedInCollection}권 편람
               </span>
             )}
-          </p>
+          </div>
+          {!isExpanded && (
+            <p className="mt-0.5 line-clamp-1 text-xs leading-relaxed text-ink-faint">
+              {collection.description}
+            </p>
+          )}
+          {isExpanded && (
+            <p className="mt-1 text-xs leading-relaxed text-ink-muted">
+              {collection.description}
+            </p>
+          )}
         </div>
       </button>
 
       {isExpanded && (
-        <div className="border-t border-border bg-shelf/50">
-          <div className="flex items-center justify-between border-b border-border/60 px-5 py-2 pl-[3.25rem]">
-            <span className="text-xs font-medium text-ink-faint">
-              편람 목록
-            </span>
+        <div className="border-t border-border/80 bg-shelf/30">
+          <div className="flex items-center justify-between px-4 py-1.5 pl-9">
+            <span className="text-[11px] text-ink-faint">편람 목록</span>
             <button
               type="button"
               onClick={() => onToggleAll(collection)}
-              className="text-xs text-ink-muted underline-offset-2 hover:text-accent hover:underline"
+              className="text-[11px] text-ink-muted underline-offset-2 hover:text-accent hover:underline"
             >
               {allSelected ? "전체 해제" : "전체 편람"}
             </button>
           </div>
 
-          <ul className="divide-y divide-border/60">
+          <ul className="pb-2">
             {collection.documents.map((doc) => {
               const isSelected = selectedDocumentIds.includes(doc.id);
               const pages = Math.max(1, Math.round(doc.tokenEstimate / 500));
               return (
                 <li key={doc.id}>
                   <label
-                    className={`flex cursor-pointer items-center gap-3 px-5 py-3 pl-[3.25rem] transition-colors ${
-                      isSelected ? "bg-accent/5" : "hover:bg-highlight/60"
+                    className={`mx-2 flex cursor-pointer items-center gap-2.5 rounded-sm border-l-2 py-1.5 pr-3 pl-7 transition-colors ${
+                      isSelected
+                        ? "border-l-accent bg-accent/[0.06] text-ink"
+                        : "border-l-transparent text-ink-muted hover:bg-highlight/50"
                     }`}
                   >
                     <input
                       type="checkbox"
                       checked={isSelected}
                       onChange={() => onToggleDocument(doc.id)}
-                      className="h-3.5 w-3.5 shrink-0 accent-accent"
+                      className="h-3 w-3 shrink-0 accent-accent"
                     />
                     <span
-                      className={`text-sm ${
-                        isSelected ? "font-medium text-ink" : "text-ink-muted"
+                      className={`min-w-0 flex-1 text-[13px] leading-snug ${
+                        isSelected ? "font-medium" : ""
                       }`}
                     >
                       {doc.title}
                     </span>
-                    <span className="ml-auto text-xs text-ink-faint">
-                      약 {pages}쪽
+                    <span className="shrink-0 text-[11px] text-ink-faint">
+                      {pages}쪽
                     </span>
                   </label>
                 </li>
@@ -189,34 +203,44 @@ export default function KnowledgeBaseBrowser({
     }
   };
 
+  const hasSelection = selectedDocumentIds.length > 0;
+
   return (
     <section
       id="knowledge-base"
       className="academic-shadow overflow-hidden rounded-sm border border-border bg-paper"
     >
-      <div className="border-b border-border bg-paper-dark/50 px-5 py-4">
+      <div className="border-b border-border bg-paper-dark/40 px-4 py-3.5">
         <p className="text-[10px] font-semibold tracking-[0.14em] text-accent uppercase">
           Knowledge Base
         </p>
-        <h2 className="mt-1 font-serif text-xl font-semibold text-ink">
+        <h2 className="mt-0.5 font-serif text-lg font-semibold text-ink">
           지식 베이스
         </h2>
-        <p className="mt-1 text-sm text-ink-muted">
-          출제 참고 자료를 컬렉션별로 편람하세요. 공개·교수·비공개 자료를
-          구분하여 관리합니다.
+        <p className="mt-1 text-xs leading-relaxed text-ink-muted">
+          컬렉션을 펼쳐 출제에 참고할 문서를 편람하세요.
         </p>
       </div>
+
+      {!hasSelection && (
+        <div className="border-b border-border/80 bg-highlight/30 px-4 py-2.5">
+          <p className="text-xs leading-relaxed text-ink-muted">
+            <span className="font-medium text-ink">시작:</span> 컬렉션을
+            선택하여 참고 자료를 지정합니다. 우측 현재 초안에 반영됩니다.
+          </p>
+        </div>
+      )}
 
       <div>
         {(["PUBLIC COLLECTIONS", "PROFESSOR COLLECTIONS"] as const).map(
           (group) => (
             <div key={group}>
-              <div className="flex items-center gap-3 border-b border-border bg-highlight/60 px-5 py-2.5">
-                <span className="h-px flex-1 bg-border-dark" aria-hidden />
-                <h3 className="shrink-0 font-serif text-xs font-medium tracking-wide text-ink-muted">
+              <div className="flex items-center gap-2 border-b border-border/80 bg-highlight/40 px-4 py-2">
+                <span className="h-px flex-1 bg-border-dark/80" aria-hidden />
+                <h3 className="shrink-0 font-serif text-[11px] font-medium tracking-wide text-ink-faint">
                   {groupLabels[group]}
                 </h3>
-                <span className="h-px flex-1 bg-border-dark" aria-hidden />
+                <span className="h-px flex-1 bg-border-dark/80" aria-hidden />
               </div>
 
               {grouped[group]?.map((collection) => (
