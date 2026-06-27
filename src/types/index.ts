@@ -2,9 +2,31 @@ export type CollectionSource = "PUBLIC" | "PROFESSOR" | "PRIVATE";
 
 export type CollectionGroup = "PUBLIC COLLECTIONS" | "PROFESSOR COLLECTIONS";
 
+export type DocumentMaterialType =
+  | "필기"
+  | "강의"
+  | "초안"
+  | "아카이브"
+  | "연구";
+
+export type DocumentSourceType =
+  | "시험분석"
+  | "시험출제"
+  | "강의노트"
+  | "연구메모"
+  | "판례정리"
+  | "출제메모"
+  | "채점기준"
+  | "사례은행";
+
 export interface KnowledgeDocument {
   id: string;
   title: string;
+  year?: number;
+  pageCount: number;
+  materialType: DocumentMaterialType;
+  sourceType: DocumentSourceType;
+  /** Legacy estimate for context sizing; typically pageCount × ~500 */
   tokenEstimate: number;
 }
 
@@ -14,6 +36,8 @@ export interface KnowledgeCollection {
   description: string;
   source: CollectionSource;
   group: CollectionGroup;
+  lastModified: string;
+  accumulatedSince?: number;
   documents: KnowledgeDocument[];
 }
 

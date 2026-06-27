@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import type { GenerationOptions } from "@/types";
 import {
-  estimateContextTokens,
+  estimateContextPages,
   getCollectionsForDocuments,
   getDocumentById,
 } from "@/data/knowledge-base";
@@ -17,9 +17,9 @@ interface CurrentDraftProps {
   hasDraft: boolean;
 }
 
-function formatVolume(tokens: number) {
-  const pages = Math.max(1, Math.round(tokens / 500));
-  return `약 ${pages}쪽`;
+function formatVolume(documentIds: string[]) {
+  const pages = estimateContextPages(documentIds);
+  return pages > 0 ? `약 ${pages}쪽` : "—";
 }
 
 export default function CurrentDraft({
@@ -29,7 +29,6 @@ export default function CurrentDraft({
   hasDraft,
 }: CurrentDraftProps) {
   const selectedCollections = getCollectionsForDocuments(selectedDocumentIds);
-  const volumeTokens = estimateContextTokens(selectedDocumentIds);
 
   const documentsByCollection = useMemo(() => {
     return selectedCollections.map((collection) => ({
@@ -173,7 +172,7 @@ export default function CurrentDraft({
                 참고 분량
               </span>
               <span className="font-serif text-sm text-ink">
-                {formatVolume(volumeTokens)}
+                {formatVolume(selectedDocumentIds)}
               </span>
             </div>
           </div>

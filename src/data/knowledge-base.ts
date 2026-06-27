@@ -3,93 +3,347 @@ import type { KnowledgeCollection } from "@/types";
 export const knowledgeCollections: KnowledgeCollection[] = [
   {
     id: "col-bar-exam",
-    title: "변호사시험 사례형",
+    title: "변호사시험 사례형 아카이브",
     description:
-      "변호사시험 형법·형사소송법 사례형 공개문제 및 모범답안 아카이브",
+      "1990년대 이후 변호사시험 형법 사례형을 수집·해부한 자료. 출제 패턴과 쟁점 배치의 기준점.",
     source: "PUBLIC",
     group: "PUBLIC COLLECTIONS",
+    lastModified: "2024.09",
+    accumulatedSince: 1995,
     documents: [
-      { id: "doc-be-2023-1", title: "2023년 제1회 형법 사례형", tokenEstimate: 2400 },
-      { id: "doc-be-2022-2", title: "2022년 제2회 형법 사례형", tokenEstimate: 2200 },
-      { id: "doc-be-2021-1", title: "2021년 제1회 형법 사례형", tokenEstimate: 2100 },
-      { id: "doc-be-sample", title: "사례형 문항 구성 가이드", tokenEstimate: 800 },
+      {
+        id: "doc-be-2008",
+        title: "2008년 변호사시험 사례형 분석",
+        year: 2008,
+        pageCount: 18,
+        materialType: "아카이브",
+        sourceType: "시험분석",
+        tokenEstimate: 9000,
+      },
+      {
+        id: "doc-be-2015",
+        title: "2015년 제1회 형법 사례형 해설",
+        year: 2015,
+        pageCount: 14,
+        materialType: "아카이브",
+        sourceType: "시험분석",
+        tokenEstimate: 7000,
+      },
+      {
+        id: "doc-be-2019",
+        title: "2019년 변호사시험 형법 쟁점 맵",
+        year: 2019,
+        pageCount: 11,
+        materialType: "아카이브",
+        sourceType: "시험분석",
+        tokenEstimate: 5500,
+      },
+      {
+        id: "doc-be-notes",
+        title: "사례형 문항 구성 수업 필기",
+        year: 2011,
+        pageCount: 8,
+        materialType: "필기",
+        sourceType: "시험분석",
+        tokenEstimate: 4000,
+      },
     ],
   },
   {
     id: "col-judicial-exam",
-    title: "사법시험 사례형",
-    description: "사법시험 형사법 사례형 출제자료 및 해설 아카이브",
+    title: "사법시험 출제 아카이브",
+    description:
+      "사법시험 시대의 형사법 출제안·기출 정리. 고전 사례형의 사실 전개와 쟁점 설계를 참고.",
     source: "PUBLIC",
     group: "PUBLIC COLLECTIONS",
+    lastModified: "2023.04",
+    accumulatedSince: 1987,
     documents: [
-      { id: "doc-je-1998", title: "1998년 사법시험 형법 사례형", tokenEstimate: 1800 },
-      { id: "doc-je-1995", title: "1995년 사법시험 형법 사례형", tokenEstimate: 1600 },
-      { id: "doc-je-1992", title: "1992년 사법시험 형법 사례형", tokenEstimate: 1500 },
-      { id: "doc-je-notes", title: "사법시험 출제 경향 분석 노트", tokenEstimate: 1200 },
+      {
+        id: "doc-je-1997",
+        title: "사법시험 출제안 (1997)",
+        year: 1997,
+        pageCount: 12,
+        materialType: "아카이브",
+        sourceType: "시험출제",
+        tokenEstimate: 6000,
+      },
+      {
+        id: "doc-je-1998",
+        title: "1998년 사법시험 형법 사례형",
+        year: 1998,
+        pageCount: 10,
+        materialType: "아카이브",
+        sourceType: "시험출제",
+        tokenEstimate: 5000,
+      },
+      {
+        id: "doc-je-1992",
+        title: "1992년 사법시험 형법 사례형",
+        year: 1992,
+        pageCount: 9,
+        materialType: "아카이브",
+        sourceType: "시험출제",
+        tokenEstimate: 4500,
+      },
+      {
+        id: "doc-je-trend",
+        title: "사법시험 출제 경향 필기 (1990s)",
+        year: 1996,
+        pageCount: 16,
+        materialType: "필기",
+        sourceType: "시험분석",
+        tokenEstimate: 8000,
+      },
     ],
   },
   {
     id: "col-precedents",
-    title: "주요 판례",
-    description: "형사법 핵심 대법원 판례 요약 및 쟁점 정리",
+    title: "판례·변천 정리",
+    description:
+      "대법원 판례의 변천 과정을 시기별로 정리한 연구 보조 자료. 수업·출제 시 판례 인용의 기초.",
     source: "PUBLIC",
     group: "PUBLIC COLLECTIONS",
+    lastModified: "2025.01",
+    accumulatedSince: 2003,
     documents: [
-      { id: "doc-prec-self-defense", title: "정당방위 관련 주요 판례", tokenEstimate: 3200 },
-      { id: "doc-prec-mistake", title: "착오범 관련 주요 판례", tokenEstimate: 2800 },
-      { id: "doc-prec-complicity", title: "공범론 관련 주요 판례", tokenEstimate: 2600 },
-      { id: "doc-prec-evidence", title: "증거법칙 관련 주요 판례", tokenEstimate: 2400 },
+      {
+        id: "doc-prec-evolution",
+        title: "판례변천 정리",
+        year: 2020,
+        pageCount: 34,
+        materialType: "연구",
+        sourceType: "판례정리",
+        tokenEstimate: 17000,
+      },
+      {
+        id: "doc-prec-self-defense",
+        title: "정당방위 판례 연표",
+        year: 2018,
+        pageCount: 22,
+        materialType: "아카이브",
+        sourceType: "판례정리",
+        tokenEstimate: 11000,
+      },
+      {
+        id: "doc-prec-mistake",
+        title: "착오범 판례 비교표",
+        year: 2016,
+        pageCount: 19,
+        materialType: "연구",
+        sourceType: "판례정리",
+        tokenEstimate: 9500,
+      },
+      {
+        id: "doc-prec-evidence",
+        title: "증거법칙 판례 요약",
+        year: 2014,
+        pageCount: 15,
+        materialType: "아카이브",
+        sourceType: "판례정리",
+        tokenEstimate: 7500,
+      },
     ],
   },
   {
-    id: "col-papers",
-    title: "대표 논문",
-    description: "교수 연구실 보유 핵심 논문 및 학설 정리 자료",
+    id: "col-research",
+    title: "연구 메모·논문 정리",
+    description:
+      "형법 총론·위법성론 관련 연구 메모와 학설 정리. 세미나·출제 쟁점 설계의 이론적 배경.",
     source: "PROFESSOR",
     group: "PROFESSOR COLLECTIONS",
+    lastModified: "2025.02",
+    accumulatedSince: 2001,
     documents: [
-      { id: "doc-paper-self-defense", title: "정당방위 연구", tokenEstimate: 4500 },
-      { id: "doc-paper-putative", title: "오상방위 연구", tokenEstimate: 4200 },
-      { id: "doc-paper-breach", title: "배임죄 연구", tokenEstimate: 3800 },
-      { id: "doc-paper-necessity", title: "긴급피난 연구", tokenEstimate: 3600 },
+      {
+        id: "doc-research-putative",
+        title: "오상방위 연구 메모",
+        year: 2019,
+        pageCount: 28,
+        materialType: "연구",
+        sourceType: "연구메모",
+        tokenEstimate: 14000,
+      },
+      {
+        id: "doc-research-self-defense",
+        title: "정당방위 학설 정리",
+        year: 2014,
+        pageCount: 24,
+        materialType: "연구",
+        sourceType: "연구메모",
+        tokenEstimate: 12000,
+      },
+      {
+        id: "doc-research-excess",
+        title: "과잉방위 판례 메모",
+        year: 2012,
+        pageCount: 14,
+        materialType: "필기",
+        sourceType: "연구메모",
+        tokenEstimate: 7000,
+      },
+      {
+        id: "doc-research-complicity",
+        title: "공범론 연구 노트",
+        year: 2008,
+        pageCount: 20,
+        materialType: "연구",
+        sourceType: "연구메모",
+        tokenEstimate: 10000,
+      },
     ],
   },
   {
     id: "col-lecture-notes",
-    title: "강의노트",
-    description: "형법 총론·각론 강의노트 및 판례 인용 정리",
+    title: "강의노트 보관함",
+    description:
+      "로스쿨·학부 강의에서 사용한 필기와 정리본. 매 학기 보완되어 온 장기 보관 자료.",
     source: "PROFESSOR",
     group: "PROFESSOR COLLECTIONS",
+    lastModified: "2024.12",
+    accumulatedSince: 1999,
     documents: [
-      { id: "doc-lecture-general", title: "형법 총론 강의노트", tokenEstimate: 5200 },
-      { id: "doc-lecture-elements", title: "구성요건론 강의노트", tokenEstimate: 4800 },
-      { id: "doc-lecture-unlawful", title: "위법성론 강의노트", tokenEstimate: 4600 },
-      { id: "doc-lecture-property", title: "재산범 각론 강의노트", tokenEstimate: 4400 },
+      {
+        id: "doc-lecture-self-defense",
+        title: "형법총론 강의노트 (정당방위)",
+        year: 2023,
+        pageCount: 42,
+        materialType: "강의",
+        sourceType: "강의노트",
+        tokenEstimate: 21000,
+      },
+      {
+        id: "doc-lecture-unlawful",
+        title: "위법성론 강의 정리",
+        year: 2021,
+        pageCount: 36,
+        materialType: "강의",
+        sourceType: "강의노트",
+        tokenEstimate: 18000,
+      },
+      {
+        id: "doc-lecture-elements",
+        title: "구성요건론 수업 필기",
+        year: 2017,
+        pageCount: 31,
+        materialType: "필기",
+        sourceType: "강의노트",
+        tokenEstimate: 15500,
+      },
+      {
+        id: "doc-lecture-property",
+        title: "재산범 각론 강의노트",
+        year: 2015,
+        pageCount: 27,
+        materialType: "강의",
+        sourceType: "강의노트",
+        tokenEstimate: 13500,
+      },
     ],
   },
   {
-    id: "col-mock-exams",
-    title: "과거 모의시험",
-    description: "연도별 모의시험 사례형 문항 및 채점기준",
+    id: "col-course-exams",
+    title: "강좌 시험·채점 자료",
+    description:
+      "학기별 기말·모의시험 문항과 채점기준 초안. 실제 강의 평가에서 사용·수정된 자료.",
     source: "PROFESSOR",
     group: "PROFESSOR COLLECTIONS",
+    lastModified: "2024.06",
+    accumulatedSince: 2005,
     documents: [
-      { id: "doc-mock-2024", title: "2024학년도 1학기 모의시험", tokenEstimate: 2000 },
-      { id: "doc-mock-2023", title: "2023학년도 2학기 모의시험", tokenEstimate: 1900 },
-      { id: "doc-mock-2023-mid", title: "2023학년도 중간고사", tokenEstimate: 1500 },
-      { id: "doc-mock-grading", title: "모의시험 채점기준 샘플", tokenEstimate: 900 },
+      {
+        id: "doc-course-2012",
+        title: "2012년 형법 기말시험",
+        year: 2012,
+        pageCount: 6,
+        materialType: "아카이브",
+        sourceType: "시험출제",
+        tokenEstimate: 3000,
+      },
+      {
+        id: "doc-course-2018",
+        title: "2018학년도 2학기 모의시험",
+        year: 2018,
+        pageCount: 8,
+        materialType: "아카이브",
+        sourceType: "시험출제",
+        tokenEstimate: 4000,
+      },
+      {
+        id: "doc-course-grading",
+        title: "채점기준 초안",
+        year: 2022,
+        pageCount: 5,
+        materialType: "초안",
+        sourceType: "채점기준",
+        tokenEstimate: 2500,
+      },
+      {
+        id: "doc-course-2024",
+        title: "2024학년도 중간고사 사례형",
+        year: 2024,
+        pageCount: 7,
+        materialType: "초안",
+        sourceType: "시험출제",
+        tokenEstimate: 3500,
+      },
     ],
   },
   {
-    id: "col-private",
-    title: "비공개 출제자료",
-    description: "미공개 출제 초안 및 내부 검토용 자료",
+    id: "col-private-drafts",
+    title: "개인 출제 서랍",
+    description:
+      "연구실 비공개 보관. 미발표 출제 메모·사례은행·검토 중인 초안. 외부 반출 전제 아님.",
     source: "PRIVATE",
     group: "PROFESSOR COLLECTIONS",
+    lastModified: "2025.03",
+    accumulatedSince: 1994,
     documents: [
-      { id: "doc-private-draft-a", title: "2025 출제 초안 A", tokenEstimate: 1800 },
-      { id: "doc-private-draft-b", title: "2025 출제 초안 B", tokenEstimate: 1700 },
-      { id: "doc-private-review", title: "출제위원회 검토 메모", tokenEstimate: 1100 },
+      {
+        id: "doc-private-memo",
+        title: "교수 개인 출제 메모",
+        year: 2025,
+        pageCount: 4,
+        materialType: "필기",
+        sourceType: "출제메모",
+        tokenEstimate: 2000,
+      },
+      {
+        id: "doc-private-bank-a",
+        title: "사례은행 A",
+        year: 2023,
+        pageCount: 22,
+        materialType: "초안",
+        sourceType: "사례은행",
+        tokenEstimate: 11000,
+      },
+      {
+        id: "doc-private-bank-b",
+        title: "사례은행 B",
+        year: 2021,
+        pageCount: 19,
+        materialType: "초안",
+        sourceType: "사례은행",
+        tokenEstimate: 9500,
+      },
+      {
+        id: "doc-private-review",
+        title: "출제위원회 검토 메모 (미공개)",
+        year: 2024,
+        pageCount: 3,
+        materialType: "필기",
+        sourceType: "출제메모",
+        tokenEstimate: 1500,
+      },
+      {
+        id: "doc-private-draft",
+        title: "2025 출제 초안 (작업 중)",
+        year: 2025,
+        pageCount: 9,
+        materialType: "초안",
+        sourceType: "출제메모",
+        tokenEstimate: 4500,
+      },
     ],
   },
 ];
@@ -115,15 +369,24 @@ export function getCollectionsForDocuments(documentIds: string[]) {
   return knowledgeCollections.filter((c) => collectionIds.has(c.id));
 }
 
+export function estimateCollectionPageCount(collection: KnowledgeCollection) {
+  return collection.documents.reduce((sum, doc) => sum + doc.pageCount, 0);
+}
+
+export function formatCollectionVolume(collection: KnowledgeCollection) {
+  const pages = estimateCollectionPageCount(collection);
+  return `약 ${pages}쪽`;
+}
+
 export function mapDocumentsToLegacyAssetIds(documentIds: string[]): string[] {
   const collectionToAsset: Record<string, string> = {
     "col-bar-exam": "asset-1",
     "col-judicial-exam": "asset-2",
     "col-precedents": "asset-2",
-    "col-papers": "asset-3",
+    "col-research": "asset-3",
     "col-lecture-notes": "asset-4",
-    "col-mock-exams": "asset-1",
-    "col-private": "asset-2",
+    "col-course-exams": "asset-1",
+    "col-private-drafts": "asset-2",
   };
 
   const assetIds = new Set<string>();
@@ -140,6 +403,13 @@ export function estimateContextTokens(documentIds: string[]) {
   return documentIds.reduce((sum, id) => {
     const found = getDocumentById(id);
     return sum + (found?.document.tokenEstimate ?? 0);
+  }, 0);
+}
+
+export function estimateContextPages(documentIds: string[]) {
+  return documentIds.reduce((sum, id) => {
+    const found = getDocumentById(id);
+    return sum + (found?.document.pageCount ?? 0);
   }, 0);
 }
 
@@ -172,7 +442,7 @@ export function formatSelectedDocumentsForPrompt(documentIds: string[]) {
       "편람 문서:",
       ...docs.map(
         ({ document }) =>
-          `- 「${document.title}」: ${collection.title} 소속 참고자료. 출제 양식·쟁점 전개·논점 배치의 벤치마크로 활용.`
+          `- 「${document.title}」(${document.year ?? "연도 미상"}, ${document.sourceType}, ${document.pageCount}쪽): ${collection.title} 소속 참고자료.`
       ),
       ""
     );

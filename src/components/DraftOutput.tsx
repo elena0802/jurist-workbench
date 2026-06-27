@@ -65,6 +65,8 @@ function DraftBasisBox({ basis }: { basis: DraftBasis }) {
                   <span className="text-ink-muted">{document.title}</span>
                   <span className="mt-0.5 block text-[10px] text-ink-faint">
                     {collection.title}
+                    {document.year ? ` · ${document.year}` : ""}
+                    {` · ${document.pageCount}쪽`}
                   </span>
                 </div>
               ))
