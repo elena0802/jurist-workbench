@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReviewFinding } from "@/types";
+import { summarizeRuleInspection } from "@/lib/rule-matching";
 import ReviewFindingsList from "@/components/ReviewFindingsList";
 
 interface DraftReviewPanelProps {
@@ -10,6 +11,35 @@ interface DraftReviewPanelProps {
   isLoading?: boolean;
   warning?: string | null;
   disabled?: boolean;
+}
+
+function RuleInspectionSummary({ findings }: { findings: ReviewFinding[] }) {
+  const stats = summarizeRuleInspection(findings);
+
+  if (stats.total === 0) return null;
+
+  return (
+    <div className="rounded-sm border border-ink/20 bg-ink/[0.03] px-4 py-3">
+      <p className="text-[10px] font-semibold tracking-[0.08em] text-ink-faint uppercase">
+        Rule Inspection
+      </p>
+      <h3 className="mt-0.5 font-serif text-sm font-semibold text-ink">
+        출제 원칙 검사
+      </h3>
+      <p className="mt-1.5 text-[13px] leading-relaxed text-ink-muted">
+        적용 원칙 {stats.total}개
+        <span className="mx-1.5 text-ink-faint">·</span>
+        <span className="text-emerald-800">충족 {stats.satisfied}</span>
+        <span className="mx-1.5 text-ink-faint">·</span>
+        <span className="text-amber-900">부분 충족 {stats.partial}</span>
+        <span className="mx-1.5 text-ink-faint">·</span>
+        <span className="font-medium text-accent">미충족 {stats.violated}</span>
+      </p>
+      <p className="mt-2 text-[11px] leading-relaxed text-ink-faint">
+        이 검토는 선택된 자료와 적용 원칙을 기준으로 제안되었습니다.
+      </p>
+    </div>
+  );
 }
 
 export default function DraftReviewPanel({
@@ -33,8 +63,8 @@ export default function DraftReviewPanel({
           초안 검토
         </h2>
         <p className="mt-1 text-xs leading-relaxed text-ink-muted">
-          1차 출제 초안을 검토하여 보완 지점을 정리했습니다. 각 항목의 반영
-          여부를 확인한 뒤 교수 승인 단계로 진행하세요.
+          출제 원칙에 따라 1차 초안을 점검했습니다. 각 항목의 적용 원칙·검토
+          근거를 확인한 뒤 교수 승인 단계로 진행하세요.
         </p>
       </div>
 
@@ -43,7 +73,7 @@ export default function DraftReviewPanel({
           <div className="rounded-sm border border-border bg-highlight/30 px-4 py-8 text-center">
             <p className="text-sm text-ink-muted">초안 검토 중…</p>
             <p className="mt-1 text-xs text-ink-faint">
-              사실관계·쟁점·채점기준 등을 점검하고 있습니다.
+              출제 원칙·사실관계·쟁점·채점기준을 점검하고 있습니다.
             </p>
           </div>
         ) : (
@@ -53,6 +83,8 @@ export default function DraftReviewPanel({
                 {warning}
               </div>
             )}
+
+            <RuleInspectionSummary findings={findings} />
 
             <div>
               <h3 className="mb-3 text-xs font-medium text-ink">
@@ -65,7 +97,6 @@ export default function DraftReviewPanel({
                 findings={findings}
                 onDecisionChange={onFindingDecision}
                 expandFirstEvidence
-                expandFirstRules
                 emptyMessage="검토 제안을 불러오지 못했습니다. 교수 승인 단계에서 체크리스트를 활용해 주세요."
               />
             </div>

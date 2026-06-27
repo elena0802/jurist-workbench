@@ -17,6 +17,8 @@ interface CurrentDraftProps {
   hasDraft: boolean;
   workflowPhase?: WorkflowPhase;
   appliedRuleCount?: number;
+  partialRuleCount?: number;
+  violatedRuleCount?: number;
 }
 
 function formatVolume(documentIds: string[]) {
@@ -31,6 +33,8 @@ export default function CurrentDraft({
   hasDraft,
   workflowPhase = "idle",
   appliedRuleCount = 0,
+  partialRuleCount = 0,
+  violatedRuleCount = 0,
 }: CurrentDraftProps) {
   const selectedCollections = getCollectionsForDocuments(selectedDocumentIds);
 
@@ -198,14 +202,33 @@ export default function CurrentDraft({
         )}
 
         {hasDraft && (
-          <div className="border-t border-border/80 bg-paper-dark/30 px-3.5 py-2 space-y-1">
+          <div className="border-t border-border/80 bg-paper-dark/30 px-3.5 py-2 space-y-0.5">
             <p className="text-[11px] text-accent">
               초안 작성 완료 · 본문에서 검수
             </p>
             {appliedRuleCount > 0 && (
-              <p className="text-[10px] text-ink-muted">
-                적용 원칙: {appliedRuleCount}개
-              </p>
+              <>
+                <p className="text-[10px] text-ink-muted">
+                  적용 원칙: {appliedRuleCount}개
+                </p>
+                {(partialRuleCount > 0 || violatedRuleCount > 0) && (
+                  <p className="text-[10px] leading-snug text-ink-faint">
+                    {partialRuleCount > 0 && (
+                      <span className="text-amber-900/80">
+                        부분 충족 {partialRuleCount}개
+                      </span>
+                    )}
+                    {partialRuleCount > 0 && violatedRuleCount > 0 && (
+                      <span className="mx-1">·</span>
+                    )}
+                    {violatedRuleCount > 0 && (
+                      <span className="text-accent/90">
+                        미충족 {violatedRuleCount}개
+                      </span>
+                    )}
+                  </p>
+                )}
+              </>
             )}
           </div>
         )}

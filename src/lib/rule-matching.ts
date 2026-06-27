@@ -248,8 +248,59 @@ export function countUniqueAppliedRules(findings: ReviewFinding[]): number {
   const ids = new Set<string>();
   for (const finding of findings) {
     for (const rule of finding.appliedRules ?? []) {
-      ids.add(rule.ruleId);
+      if (rule.ruleId && rule.ruleId !== "—" && rule.ruleId !== "UNKNOWN") {
+        ids.add(rule.ruleId);
+      }
     }
   }
   return ids.size;
+}
+
+export interface RuleInspectionSummary {
+  total: number;
+  satisfied: number;
+  partial: number;
+  violated: number;
+}
+
+const STATUS_PRIORITY: Record<RuleStatus, number> = {
+  satisfied: 1,
+  partial: 2,
+  violated: 3,
+};
+
+export function summarizeRuleInspection(
+  findings: ReviewFinding[]
+): RuleInspectionSummary {
+  const byRuleId = new Map<string, RuleStatus>();
+
+  for (const finding of findings) {
+    for (const rule of finding.appliedRules ?? []) {
+      const id = rule.ruleId?.trim();
+      if (!id || id === "—" || id === "UNKNOWN") continue;
+
+      const status = rule.status ?? "partial";
+      const existing = byRuleId.get(id);
+      if (!existing || STATUS_PRIORITY[status] > STATUS_PRIORITY[existing]) {
+        byRuleId.set(id, status);
+      }
+    }
+  }
+
+  let satisfied = 0;
+  let partial = 0;
+  let violated = 0;
+
+  for (const status of byRuleId.values()) {
+    if (status === "satisfied") satisfied += 1;
+    else if (status === "violated") violated += 1;
+    else partial += 1;
+  }
+
+  return {
+    total: byRuleId.size,
+    satisfied,
+    partial,
+    violated,
+  };
 }

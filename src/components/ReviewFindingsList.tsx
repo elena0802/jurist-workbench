@@ -17,7 +17,6 @@ interface ReviewFindingsListProps {
   showEvidence?: boolean;
   showAppliedRules?: boolean;
   expandFirstEvidence?: boolean;
-  expandFirstRules?: boolean;
 }
 
 const severityLabels: Record<ReviewFindingSeverity, string> = {
@@ -33,9 +32,9 @@ const severityStyles: Record<ReviewFindingSeverity, string> = {
 };
 
 const ruleStatusStyles: Record<RuleStatus, string> = {
-  satisfied: "border-ink/20 bg-ink/5 text-ink-muted",
-  partial: "border-amber-200/80 bg-amber-50 text-amber-900",
-  violated: "border-red-200/80 bg-red-50 text-red-800",
+  satisfied: "border-emerald-200/70 bg-emerald-50/80 text-emerald-900",
+  partial: "border-amber-200/90 bg-amber-50 text-amber-950",
+  violated: "border-accent/45 bg-accent/15 text-accent",
 };
 
 function safeRule(rule: AppliedRule): AppliedRule {
@@ -50,12 +49,12 @@ function safeRule(rule: AppliedRule): AppliedRule {
   };
 }
 
-function AppliedRulesSection({
+function AppliedRulesBlock({
   rules,
-  defaultOpen,
+  compact = false,
 }: {
   rules: AppliedRule[];
-  defaultOpen: boolean;
+  compact?: boolean;
 }) {
   const safeRules =
     rules.length > 0
@@ -72,47 +71,48 @@ function AppliedRulesSection({
         ];
 
   return (
-    <details
-      className="mt-2.5 rounded-sm border border-border/80 bg-highlight/25"
-      open={defaultOpen}
+    <div
+      className={`mt-2.5 rounded-sm border border-ink/20 bg-highlight/40 ${
+        compact ? "px-2 py-1.5" : "px-2.5 py-2"
+      }`}
     >
-      <summary className="cursor-pointer px-2.5 py-1.5 text-[11px] font-medium text-ink-muted hover:bg-highlight/50">
+      <p className="text-[10px] font-semibold tracking-[0.06em] text-ink-faint">
         적용 원칙
-        <span className="ml-1.5 font-normal text-ink-faint">
-          {safeRules.length}건
-        </span>
-      </summary>
-      <ul className="space-y-2 border-t border-border/60 px-2.5 py-2">
+      </p>
+      <ul className={`space-y-1.5 ${compact ? "mt-1" : "mt-1.5"}`}>
         {safeRules.map((rule) => (
           <li
             key={`${rule.ruleId}-${rule.title}`}
-            className="rounded-sm border border-border/60 bg-paper/70 px-2 py-1.5"
+            className="rounded-sm border border-border/50 bg-paper/80 px-2 py-1.5"
           >
             <div className="flex flex-wrap items-center gap-1.5">
-              <span className="font-mono text-[10px] text-ink-faint">
+              <span className="font-mono text-[10px] font-medium text-ink-muted">
                 {rule.ruleId}
               </span>
               <span
-                className={`rounded-sm border px-1.5 py-px text-[10px] font-medium ${ruleStatusStyles[rule.status]}`}
+                className={`rounded-sm border px-1.5 py-px text-[10px] font-semibold ${ruleStatusStyles[rule.status]}`}
               >
                 {rule.statusLabel}
               </span>
             </div>
-            <p className="mt-1 text-[11px] font-medium leading-snug text-ink">
+            <p
+              className={`mt-0.5 font-medium leading-snug text-ink ${
+                compact ? "text-[10px]" : "text-[11px]"
+              }`}
+            >
               {rule.title}
             </p>
             <p className="mt-0.5 text-[10px] leading-relaxed text-ink-muted">
-              <span className="text-ink-faint">검토 근거 · </span>
               {rule.explanation}
             </p>
           </li>
         ))}
       </ul>
-    </details>
+    </div>
   );
 }
 
-function FindingEvidence({
+function FindingReviewBasis({
   finding,
   defaultOpen,
 }: {
@@ -135,7 +135,7 @@ function FindingEvidence({
       open={defaultOpen}
     >
       <summary className="cursor-pointer px-2.5 py-1.5 text-[11px] font-medium text-ink-muted hover:bg-highlight/40">
-        판단 근거
+        검토 근거
       </summary>
       <div className="space-y-2 border-t border-border/60 px-2.5 py-2 text-[11px] leading-relaxed">
         {finding.evidenceDocuments.length > 0 && (
@@ -175,7 +175,6 @@ export default function ReviewFindingsList({
   showEvidence = true,
   showAppliedRules = true,
   expandFirstEvidence = false,
-  expandFirstRules = false,
 }: ReviewFindingsListProps) {
   if (!findings.length) {
     return (
@@ -191,6 +190,7 @@ export default function ReviewFindingsList({
         const isAccept = finding.decision === "accept";
         const isIgnore = finding.decision === "ignore";
         const severity = finding.severity ?? "medium";
+        const isFirst = index === 0;
 
         return (
           <li
@@ -223,15 +223,15 @@ export default function ReviewFindingsList({
               </p>
             )}
             {showAppliedRules && (
-              <AppliedRulesSection
+              <AppliedRulesBlock
                 rules={finding.appliedRules ?? []}
-                defaultOpen={expandFirstRules && index === 0}
+                compact={!isFirst}
               />
             )}
             {showEvidence && (
-              <FindingEvidence
+              <FindingReviewBasis
                 finding={finding}
-                defaultOpen={expandFirstEvidence && index === 0}
+                defaultOpen={expandFirstEvidence && isFirst}
               />
             )}
             {!readOnly && onDecisionChange && (

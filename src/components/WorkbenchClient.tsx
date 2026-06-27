@@ -20,7 +20,10 @@ import {
   normalizeReviewFindings,
   toRevisionFindingPayload,
 } from "@/lib/normalize-review-findings";
-import { countUniqueAppliedRules } from "@/lib/rule-matching";
+import {
+  countUniqueAppliedRules,
+  summarizeRuleInspection,
+} from "@/lib/rule-matching";
 import { buildLocalRevisionSummary, normalizeRevisionSummary } from "@/lib/revision-summary";
 import Header from "@/components/Header";
 import WorkflowStepper from "@/components/WorkflowStepper";
@@ -350,6 +353,11 @@ export default function WorkbenchClient() {
     [reviewFindings]
   );
 
+  const ruleInspection = useMemo(
+    () => summarizeRuleInspection(reviewFindings),
+    [reviewFindings]
+  );
+
   return (
     <div className="min-h-screen bg-paper">
       <Header variant="workbench" />
@@ -457,6 +465,8 @@ export default function WorkbenchClient() {
               hasDraft={hasDraftV1 || hasRevisedDraft}
               workflowPhase={workflowPhase}
               appliedRuleCount={appliedRuleCount}
+              partialRuleCount={ruleInspection.partial}
+              violatedRuleCount={ruleInspection.violated}
             />
           </div>
         </div>
@@ -469,6 +479,8 @@ export default function WorkbenchClient() {
             hasDraft={hasDraftV1 || hasRevisedDraft}
             workflowPhase={workflowPhase}
             appliedRuleCount={appliedRuleCount}
+            partialRuleCount={ruleInspection.partial}
+            violatedRuleCount={ruleInspection.violated}
           />
         </div>
       </main>
