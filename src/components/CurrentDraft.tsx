@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import type { GenerationOptions } from "@/types";
+import type { GenerationOptions, WorkflowPhase } from "@/types";
 import {
   estimateContextPages,
   getCollectionsForDocuments,
@@ -15,6 +15,7 @@ interface CurrentDraftProps {
   selectedIssueIds: string[];
   options: GenerationOptions;
   hasDraft: boolean;
+  workflowPhase?: WorkflowPhase;
 }
 
 function formatVolume(documentIds: string[]) {
@@ -27,6 +28,7 @@ export default function CurrentDraft({
   selectedIssueIds,
   options,
   hasDraft,
+  workflowPhase = "idle",
 }: CurrentDraftProps) {
   const selectedCollections = getCollectionsForDocuments(selectedDocumentIds);
 
@@ -74,11 +76,17 @@ export default function CurrentDraft({
           현재 초안
         </h2>
         <p className="mt-0.5 text-[11px] leading-relaxed text-ink-faint">
-          {hasDraft
-            ? "검수 대기 중"
-            : isEmpty
-              ? "지식 베이스와 평가 쟁점을 지정하세요"
-              : "초안 작성 준비됨"}
+          {workflowPhase === "revised-complete"
+            ? "수정 초안 v2 완료"
+            : workflowPhase === "revising"
+              ? "수정 초안 작성 중"
+              : workflowPhase === "review-pending"
+                ? "교수 검수 대기"
+                : hasDraft
+                  ? "검수 대기 중"
+                  : isEmpty
+                    ? "지식 베이스와 평가 쟁점을 지정하세요"
+                    : "초안 작성 준비됨"}
         </p>
       </div>
 
@@ -88,6 +96,8 @@ export default function CurrentDraft({
             <li>1. 참고 자료 편람</li>
             <li>2. 평가 쟁점 설계</li>
             <li>3. 출제 초안 작성</li>
+            <li>4. 교수 검수</li>
+            <li>5. 수정 초안</li>
           </ol>
         </div>
       )}

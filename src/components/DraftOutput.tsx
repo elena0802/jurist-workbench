@@ -27,6 +27,9 @@ interface DraftOutputProps {
   basis?: DraftBasis;
   onRecompose?: () => void;
   isRecomposing?: boolean;
+  versionLabel?: string;
+  statusBadge?: string | null;
+  showReviewSection?: boolean;
 }
 
 function DraftBasisBox({ basis }: { basis: DraftBasis }) {
@@ -187,6 +190,9 @@ export default function DraftOutput({
   basis,
   onRecompose,
   isRecomposing = false,
+  versionLabel = "출제 초안",
+  statusBadge = null,
+  showReviewSection = true,
 }: DraftOutputProps) {
   const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">(
     "idle"
@@ -250,7 +256,10 @@ export default function DraftOutput({
     );
   }
 
-  const visibleSections = getVisibleDraftSections(safeResult);
+  const visibleSections = getVisibleDraftSections(safeResult).filter(
+    (section) =>
+      showReviewSection || section.key !== "professorReviewMemo"
+  );
 
   const handleCopyAll = async () => {
     try {
@@ -271,8 +280,13 @@ export default function DraftOutput({
             Draft Output
           </p>
           <h2 className="mt-1 font-serif text-xl font-semibold text-ink">
-            출제 초안
+            {versionLabel}
           </h2>
+          {statusBadge && (
+            <p className="mt-1.5 inline-block rounded-sm border border-border-dark bg-highlight px-2 py-0.5 text-[11px] font-medium text-ink-muted">
+              {statusBadge}
+            </p>
+          )}
           <p className="mt-1 text-sm text-ink-faint">
             교수 검수를 위한 초안입니다. 최종 출제 여부는 교수님이 결정합니다.
           </p>

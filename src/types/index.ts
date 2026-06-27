@@ -71,6 +71,42 @@ export interface GenerationResult {
   professorReviewMemo: string;
 }
 
+export type ReviewChecklistId =
+  | "strengthen-facts"
+  | "strengthen-issue-links"
+  | "raise-difficulty"
+  | "lower-difficulty"
+  | "detail-grading"
+  | "supplement-intent"
+  | "remove-issues"
+  | "adjust-length";
+
+export type SuggestionDecision = "accept" | "ignore" | "pending";
+
+export interface ReviewSuggestion {
+  id: string;
+  text: string;
+  decision: SuggestionDecision;
+}
+
+export type WorkflowPhase =
+  | "idle"
+  | "draft-v1-complete"
+  | "review-pending"
+  | "revising"
+  | "revised-complete";
+
+export interface RevisionRequest {
+  originalDraft: GenerationResult;
+  assetIds: string[];
+  documentIds?: string[];
+  issueIds: string[];
+  options: GenerationOptions;
+  checklistItems: ReviewChecklistId[];
+  acceptedSuggestions: string[];
+  professorInstruction: string;
+}
+
 export interface EducationalAsset {
   id: string;
   title: string;
