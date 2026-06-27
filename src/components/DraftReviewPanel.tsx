@@ -64,6 +64,7 @@ export default function DraftReviewPanel({
               <ReviewFindingsList
                 findings={findings}
                 onDecisionChange={onFindingDecision}
+                expandFirstEvidence
                 emptyMessage="검토 제안을 불러오지 못했습니다. 교수 승인 단계에서 체크리스트를 활용해 주세요."
               />
             </div>

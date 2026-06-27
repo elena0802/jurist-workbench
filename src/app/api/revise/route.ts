@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
-import type { GenerationResult, RevisionRequest } from "@/types";
+import type { GenerationResult, RevisionRequest, ReviewFinding } from "@/types";
 import { buildRevisionPrompt } from "@/lib/revision-prompt";
 import { buildLocalRevisionSummary } from "@/lib/revision-summary";
+import { fillFindingEvidence } from "@/lib/normalize-review-findings";
 import {
   applyOutputFilters,
   hasDraftContent,
@@ -12,6 +13,22 @@ import {
 
 function getOpenAIClient() {
   return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+}
+
+function toSummaryFinding(
+  payload: RevisionRequest["approvedFindings"][number],
+  id: string,
+  decision: "accept" | "ignore"
+): ReviewFinding {
+  return {
+    id,
+    decision,
+    ...fillFindingEvidence(payload, {
+      documentTitles: payload.evidenceDocuments ?? [],
+      issueNames: [],
+      category: payload.category,
+    }),
+  };
 }
 
 export async function POST(request: Request) {
@@ -116,21 +133,13 @@ export async function POST(request: Request) {
       );
     }
 
-    const approvedForSummary = approvedFindings.map((f, index) => ({
-      id: `approved-${index}`,
-      category: f.category,
-      finding: f.finding,
-      suggestedAction: f.suggestedAction,
-      decision: "accept" as const,
-    }));
+    const approvedForSummary = approvedFindings.map((f, index) =>
+      toSummaryFinding(f, `approved-${index}`, "accept")
+    );
 
-    const ignoredForSummary = ignoredFindings.map((f, index) => ({
-      id: `ignored-${index}`,
-      category: f.category,
-      finding: f.finding,
-      suggestedAction: f.suggestedAction,
-      decision: "ignore" as const,
-    }));
+    const ignoredForSummary = ignoredFindings.map((f, index) =>
+      toSummaryFinding(f, `ignored-${index}`, "ignore")
+    );
 
     const revisionSummary = buildLocalRevisionSummary(
       approvedForSummary,

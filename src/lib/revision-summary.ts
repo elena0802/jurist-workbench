@@ -14,9 +14,23 @@ export function buildLocalRevisionSummary(
   options: GenerationOptions
 ): RevisionSummary {
   const applied: string[] = [];
+  const evidenceApplied: string[] = [];
+  const expectedEffects: string[] = [];
 
   for (const finding of approvedFindings) {
     applied.push(`[${finding.category}] ${finding.suggestedAction}`);
+
+    const docLabel =
+      finding.evidenceDocuments.length > 0
+        ? finding.evidenceDocuments.join(", ")
+        : "자료 근거 미기재";
+    evidenceApplied.push(
+      `[${finding.category}] ${finding.finding} — 자료: ${docLabel}`
+    );
+
+    if (finding.expectedEffect.trim()) {
+      expectedEffects.push(`[${finding.category}] ${finding.expectedEffect}`);
+    }
   }
 
   for (const id of checklistIds) {
@@ -76,6 +90,14 @@ export function buildLocalRevisionSummary(
   return {
     applied: applied.length > 0 ? applied : ["승인된 검토 항목 없음"],
     preserved,
+    evidenceApplied:
+      evidenceApplied.length > 0
+        ? evidenceApplied
+        : ["근거 기반 반영 항목 없음"],
+    expectedEffects:
+      expectedEffects.length > 0
+        ? expectedEffects
+        : ["기대 효과 정보 없음"],
     professorInstructionApplied: professorInstruction.trim().length > 0,
     professorInstructionNote: professorInstruction.trim()
       ? "교수님 추가 지시를 반영하였습니다."
@@ -94,9 +116,15 @@ export function normalizeRevisionSummary(input: unknown): RevisionSummary | null
     return value.map((item) => String(item)).filter((s) => s.trim());
   };
 
+  const applied = toStringArray(record.applied);
+  const evidenceApplied = toStringArray(record.evidenceApplied);
+  const expectedEffects = toStringArray(record.expectedEffects);
+
   return {
-    applied: toStringArray(record.applied),
+    applied,
     preserved: toStringArray(record.preserved),
+    evidenceApplied,
+    expectedEffects,
     professorInstructionApplied: Boolean(record.professorInstructionApplied),
     professorInstructionNote: String(
       record.professorInstructionNote ?? ""

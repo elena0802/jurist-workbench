@@ -18,6 +18,7 @@ import {
 import {
   buildDefaultReviewFindings,
   normalizeReviewFindings,
+  toRevisionFindingPayload,
 } from "@/lib/normalize-review-findings";
 import { buildLocalRevisionSummary, normalizeRevisionSummary } from "@/lib/revision-summary";
 import Header from "@/components/Header";
@@ -159,10 +160,18 @@ export default function WorkbenchClient() {
           setReviewWarning(data.warning);
         }
 
-        let findings = normalizeReviewFindings(data.findings ?? data);
+        let findings = normalizeReviewFindings(
+          data.findings ?? data,
+          selectedDocumentIds,
+          selectedIssueIds
+        );
 
         if (findings.length === 0) {
-          findings = buildDefaultReviewFindings(selectedIssueIds, options);
+          findings = buildDefaultReviewFindings(
+            selectedIssueIds,
+            options,
+            selectedDocumentIds
+          );
           if (!data.warning) {
             setReviewWarning(
               "검토 제안을 불러오지 못해 기본 검토 항목을 표시합니다."
@@ -172,7 +181,11 @@ export default function WorkbenchClient() {
 
         setReviewFindings(findings);
       } catch {
-        const fallback = buildDefaultReviewFindings(selectedIssueIds, options);
+        const fallback = buildDefaultReviewFindings(
+          selectedIssueIds,
+          options,
+          selectedDocumentIds
+        );
         setReviewFindings(fallback);
         setReviewWarning(
           "초안 검토를 자동 생성하지 못해 기본 검토 제안을 표시합니다."
@@ -251,19 +264,11 @@ export default function WorkbenchClient() {
 
     const approvedFindings = reviewFindings
       .filter((f) => f.decision === "accept")
-      .map((f) => ({
-        category: f.category,
-        finding: f.finding,
-        suggestedAction: f.suggestedAction,
-      }));
+      .map(toRevisionFindingPayload);
 
     const ignoredFindings = reviewFindings
       .filter((f) => f.decision === "ignore")
-      .map((f) => ({
-        category: f.category,
-        finding: f.finding,
-        suggestedAction: f.suggestedAction,
-      }));
+      .map(toRevisionFindingPayload);
 
     try {
       const response = await fetch("/api/revise", {

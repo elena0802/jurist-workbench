@@ -12,6 +12,18 @@ function getOpenAIClient() {
   return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 }
 
+const defaultOptions = {
+  purpose: "모의시험" as const,
+  difficulty: "로스쿨" as const,
+  outputs: {
+    caseProblem: true,
+    examIntent: true,
+    issueStructure: true,
+    gradingCriteria: true,
+    professorReviewMemo: true,
+  },
+};
+
 export async function POST(request: Request) {
   let body: ReviewRequest | null = null;
 
@@ -25,10 +37,15 @@ export async function POST(request: Request) {
       );
     }
 
+    const documentIds = body.documentIds ?? [];
+    const issueIds = body.issueIds ?? [];
+    const options = body.options ?? defaultOptions;
+
     if (!process.env.OPENAI_API_KEY) {
       const fallback = buildDefaultReviewFindings(
-        body.issueIds ?? [],
-        body.options
+        issueIds,
+        options,
+        documentIds
       );
       return NextResponse.json({
         findings: fallback,
@@ -45,12 +62,12 @@ export async function POST(request: Request) {
         {
           role: "system",
           content: `당신은 한국 형사법 출제 초안을 검토하는 전문 검토자입니다.
-교수 검수 전 보완 지점을 구조화합니다. 유효한 JSON만 반환하세요.`,
+각 보완 지점에 대해 근거 있는 판단을 구조화합니다. 내부 추론 과정은 노출하지 말고 유효한 JSON만 반환하세요.`,
         },
         { role: "user", content: prompt },
       ],
       temperature: 0.55,
-      max_tokens: 2000,
+      max_tokens: 3500,
       response_format: { type: "json_object" },
     });
 
@@ -66,12 +83,13 @@ export async function POST(request: Request) {
       throw new Error("검토 응답을 해석하지 못했습니다.");
     }
 
-    let findings = normalizeReviewFindings(parsed);
+    let findings = normalizeReviewFindings(parsed, documentIds, issueIds);
 
     if (findings.length < 3) {
       const fallback = buildDefaultReviewFindings(
-        body.issueIds ?? [],
-        body.options
+        issueIds,
+        options,
+        documentIds
       );
       const existingTexts = new Set(findings.map((f) => f.finding));
       for (const item of fallback) {
@@ -81,7 +99,7 @@ export async function POST(request: Request) {
     }
 
     if (findings.length === 0) {
-      findings = buildDefaultReviewFindings(body.issueIds ?? [], body.options);
+      findings = buildDefaultReviewFindings(issueIds, options, documentIds);
     }
 
     return NextResponse.json({ findings, source: "review" });
@@ -90,17 +108,8 @@ export async function POST(request: Request) {
 
     const fallback = buildDefaultReviewFindings(
       body?.issueIds ?? [],
-      body?.options ?? {
-        purpose: "모의시험",
-        difficulty: "로스쿨",
-        outputs: {
-          caseProblem: true,
-          examIntent: true,
-          issueStructure: true,
-          gradingCriteria: true,
-          professorReviewMemo: true,
-        },
-      }
+      body?.options ?? defaultOptions,
+      body?.documentIds ?? []
     );
 
     return NextResponse.json({

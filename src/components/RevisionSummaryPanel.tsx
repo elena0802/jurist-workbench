@@ -40,6 +40,8 @@ function SummaryList({
 const emptySummary: RevisionSummary = {
   applied: [],
   preserved: ["1차 초안의 전체 구조와 학술적 문체"],
+  evidenceApplied: [],
+  expectedEffects: [],
   professorInstructionApplied: false,
   professorInstructionNote: "교수님 추가 지시 없음",
   difficultyChange: "—",
@@ -79,9 +81,19 @@ export default function RevisionSummaryPanel({
           emptyText="반영 항목 없음"
         />
         <SummaryList
+          title="근거 기반 반영 항목"
+          items={safe.evidenceApplied ?? []}
+          emptyText="근거 기반 반영 항목 없음"
+        />
+        <SummaryList
           title="유지한 내용"
           items={safe.preserved}
           emptyText="유지 항목 정보 없음"
+        />
+        <SummaryList
+          title="기대 효과"
+          items={safe.expectedEffects ?? []}
+          emptyText="기대 효과 정보 없음"
         />
 
         <div>

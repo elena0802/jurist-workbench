@@ -14,11 +14,22 @@ export type ReviewFindingCategory =
 
 export type FindingDecision = "accept" | "ignore";
 
-export interface ReviewFinding {
-  id: string;
+export type ReviewFindingSeverity = "low" | "medium" | "high";
+
+export interface ReviewFindingPayload {
   category: ReviewFindingCategory;
   finding: string;
   suggestedAction: string;
+  evidenceDocuments: string[];
+  evidenceText: string;
+  reasoningBasis: string;
+  recommendedReason: string;
+  expectedEffect: string;
+  severity: ReviewFindingSeverity;
+}
+
+export interface ReviewFinding extends ReviewFindingPayload {
+  id: string;
   decision: FindingDecision;
 }
 
@@ -33,6 +44,8 @@ export interface ReviewRequest {
 export interface RevisionSummary {
   applied: string[];
   preserved: string[];
+  evidenceApplied: string[];
+  expectedEffects: string[];
   professorInstructionApplied: boolean;
   professorInstructionNote: string;
   difficultyChange: string;
@@ -46,15 +59,7 @@ export interface RevisionRequest {
   issueIds: string[];
   options: GenerationOptions;
   checklistItems: ReviewChecklistId[];
-  approvedFindings: Array<{
-    category: ReviewFindingCategory;
-    finding: string;
-    suggestedAction: string;
-  }>;
-  ignoredFindings: Array<{
-    category: ReviewFindingCategory;
-    finding: string;
-    suggestedAction: string;
-  }>;
+  approvedFindings: ReviewFindingPayload[];
+  ignoredFindings: ReviewFindingPayload[];
   professorInstruction: string;
 }

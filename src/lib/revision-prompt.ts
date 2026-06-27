@@ -23,11 +23,17 @@ export function buildRevisionPrompt(request: RevisionRequest): string {
     .join("\n");
 
   const approvedBlock = request.approvedFindings
-    .map(
-      (f) =>
-        `- [${f.category}] 발견: ${f.finding} → 조치: ${f.suggestedAction}`
-    )
-    .join("\n");
+    .map((f) => {
+      const docs =
+        f.evidenceDocuments.length > 0
+          ? ` (자료: ${f.evidenceDocuments.join(", ")})`
+          : "";
+      return `- [${f.category}] 발견: ${f.finding}
+  조치: ${f.suggestedAction}
+  반영 이유: ${f.recommendedReason}
+  예상 효과: ${f.expectedEffect}${docs}`;
+    })
+    .join("\n\n");
 
   const ignoredBlock = request.ignoredFindings
     .map((f) => `- [${f.category}] ${f.finding} (교수 승인에서 제외)`)
@@ -50,6 +56,7 @@ export function buildRevisionPrompt(request: RevisionRequest): string {
 - 확정 시험문제가 아닌 「수정 초안 v2」입니다.
 - 1차 초안의 강점은 보존하고, 승인된 검토 내용만 반영하세요.
 - 무시(제외)된 검토 항목은 반영하지 마세요.
+- 승인된 각 항목의 suggestedAction을 실행하고, recommendedReason과 expectedEffect가 드러나도록 수정하세요.
 - 허위 판례 인용·조문 날조·법적 결론의 단정을 금지합니다.
 
 ## 1차 출제 초안
@@ -80,9 +87,10 @@ ${request.professorInstruction.trim() || "(추가 지시 없음)"}
 
 ## 수정 지침
 1. 승인된 검토·체크리스트·교수 지시만 반영하세요.
-2. 변경 사항이 교수 검수 메모에 무엇이 바뀌었는지 드러나게 기록하세요.
-3. 사실관계·쟁점·채점기준·출제의도의 일관성을 유지하세요.
-4. 모든 내용은 한국어로 작성하세요.
+2. 각 승인 항목의 예상 효과(expectedEffect)가 초안에서 실현되도록 구체적으로 수정하세요.
+3. 변경 사항이 교수 검수 메모에 무엇이 바뀌었는지 드러나게 기록하세요.
+4. 사실관계·쟁점·채점기준·출제의도의 일관성을 유지하세요.
+5. 모든 내용은 한국어로 작성하세요.
 
 ## 출력 형식
 반드시 아래 JSON 키만 사용. 모든 값은 문자열입니다.
