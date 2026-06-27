@@ -1,11 +1,12 @@
 "use client";
 
-import type { ReviewChecklistId, ReviewSuggestion } from "@/types";
+import type { ReviewChecklistId, ReviewFinding } from "@/types";
 import { reviewChecklistItems } from "@/data/review-checklist";
+import ReviewFindingsList from "@/components/ReviewFindingsList";
 
 interface ProfessorReviewPanelProps {
-  suggestions: ReviewSuggestion[];
-  onSuggestionDecision: (id: string, decision: "accept" | "ignore") => void;
+  findings: ReviewFinding[];
+  onFindingDecision: (id: string, decision: "accept" | "ignore") => void;
   checklistIds: ReviewChecklistId[];
   onChecklistChange: (ids: ReviewChecklistId[]) => void;
   professorInstruction: string;
@@ -17,8 +18,8 @@ interface ProfessorReviewPanelProps {
 }
 
 export default function ProfessorReviewPanel({
-  suggestions,
-  onSuggestionDecision,
+  findings,
+  onFindingDecision,
   checklistIds,
   onChecklistChange,
   professorInstruction,
@@ -36,7 +37,7 @@ export default function ProfessorReviewPanel({
     }
   };
 
-  const acceptedCount = suggestions.filter((s) => s.decision === "accept").length;
+  const acceptedCount = findings.filter((f) => f.decision === "accept").length;
   const canRevise =
     !disabled &&
     !isRevising &&
@@ -46,23 +47,37 @@ export default function ProfessorReviewPanel({
 
   return (
     <section
-      id="professor-review"
+      id="professor-approval"
       className="academic-shadow rounded-sm border border-border bg-paper"
     >
       <div className="border-b border-border bg-paper-dark/40 px-5 py-4">
         <p className="text-[10px] font-semibold tracking-[0.14em] text-accent uppercase">
-          Professor Review
+          Professor Approval
         </p>
         <h2 className="mt-0.5 font-serif text-lg font-semibold text-ink">
-          교수 검수
+          교수 승인
         </h2>
         <p className="mt-1 text-xs leading-relaxed text-ink-muted">
-          초안은 교수 검수를 거쳐 수정됩니다. 체크리스트·제안·추가 지시를
-          선택한 뒤 수정 초안을 작성하세요.
+          검토 제안의 반영 여부를 확정하고, 체크리스트·추가 지시를 선택한 뒤
+          수정 초안을 작성하세요.
         </p>
       </div>
 
       <div className="space-y-6 p-5">
+        <div>
+          <h3 className="mb-3 text-xs font-medium text-ink">
+            검토 제안
+            <span className="ml-2 font-normal text-ink-faint">
+              반영 · 무시 선택
+            </span>
+          </h3>
+          <ReviewFindingsList
+            findings={findings}
+            onDecisionChange={onFindingDecision}
+            emptyMessage="검토 제안이 없습니다. 체크리스트와 추가 지시로 수정할 수 있습니다."
+          />
+        </div>
+
         <div>
           <h3 className="mb-3 text-xs font-medium text-ink">검수 체크리스트</h3>
           <div className="grid gap-2 sm:grid-cols-2">
@@ -88,61 +103,6 @@ export default function ProfessorReviewPanel({
               );
             })}
           </div>
-        </div>
-
-        <div>
-          <h3 className="mb-3 text-xs font-medium text-ink">
-            검수 제안
-            <span className="ml-2 font-normal text-ink-faint">
-              1차 초안 검수 포인트
-            </span>
-          </h3>
-          <ul className="space-y-2">
-            {suggestions.map((suggestion) => (
-              <li
-                key={suggestion.id}
-                className={`rounded-sm border px-3 py-2.5 ${
-                  suggestion.decision === "accept"
-                    ? "border-accent/35 bg-accent/[0.05]"
-                    : suggestion.decision === "ignore"
-                      ? "border-border bg-paper-dark/20 opacity-60"
-                      : "border-border bg-paper"
-                }`}
-              >
-                <p className="text-[13px] leading-relaxed text-ink-muted">
-                  {suggestion.text}
-                </p>
-                <div className="mt-2 flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      onSuggestionDecision(suggestion.id, "accept")
-                    }
-                    className={`rounded-sm border px-2 py-0.5 text-[11px] transition-colors ${
-                      suggestion.decision === "accept"
-                        ? "border-accent bg-accent text-paper"
-                        : "border-border text-ink-muted hover:border-accent/40"
-                    }`}
-                  >
-                    반영
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      onSuggestionDecision(suggestion.id, "ignore")
-                    }
-                    className={`rounded-sm border px-2 py-0.5 text-[11px] transition-colors ${
-                      suggestion.decision === "ignore"
-                        ? "border-ink/30 bg-ink/10 text-ink"
-                        : "border-border text-ink-muted hover:border-border-dark"
-                    }`}
-                  >
-                    무시
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
         </div>
 
         <div>
@@ -177,12 +137,12 @@ export default function ProfessorReviewPanel({
           >
             {isRevising
               ? "수정 초안 작성 중…"
-              : "검수 내용 반영하여 수정 초안 작성"}
+              : "승인한 검토 내용으로 수정 초안 작성"}
           </button>
           {!canRevise && !isRevising && (
             <p className="mt-2 text-xs text-ink-faint">
-              체크리스트, 반영할 제안, 또는 추가 지시 중 하나 이상을 지정해
-              주세요.
+              반영할 검토 제안, 체크리스트, 또는 추가 지시 중 하나 이상을
+              지정해 주세요.
             </p>
           )}
         </div>

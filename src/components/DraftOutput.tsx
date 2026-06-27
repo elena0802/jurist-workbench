@@ -30,6 +30,7 @@ interface DraftOutputProps {
   versionLabel?: string;
   statusBadge?: string | null;
   showReviewSection?: boolean;
+  footerNote?: string | null;
 }
 
 function DraftBasisBox({ basis }: { basis: DraftBasis }) {
@@ -193,6 +194,7 @@ export default function DraftOutput({
   versionLabel = "출제 초안",
   statusBadge = null,
   showReviewSection = true,
+  footerNote = null,
 }: DraftOutputProps) {
   const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">(
     "idle"
@@ -288,7 +290,8 @@ export default function DraftOutput({
             </p>
           )}
           <p className="mt-1 text-sm text-ink-faint">
-            교수 검수를 위한 초안입니다. 최종 출제 여부는 교수님이 결정합니다.
+            {footerNote ??
+              "교수 검수를 위한 초안입니다. 최종 출제 여부는 교수님이 결정합니다."}
           </p>
         </div>
 

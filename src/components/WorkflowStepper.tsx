@@ -3,7 +3,8 @@ interface WorkflowStepperProps {
     | "knowledge-base"
     | "issue-design"
     | "draft"
-    | "professor-review"
+    | "draft-review"
+    | "professor-approval"
     | "revised-draft";
 }
 
@@ -20,9 +21,14 @@ const steps = [
   },
   { id: "draft" as const, label: "Draft", sublabel: "출제 초안" },
   {
-    id: "professor-review" as const,
-    label: "Professor Review",
-    sublabel: "교수 검수",
+    id: "draft-review" as const,
+    label: "Draft Review",
+    sublabel: "초안 검토",
+  },
+  {
+    id: "professor-approval" as const,
+    label: "Professor Approval",
+    sublabel: "교수 승인",
   },
   {
     id: "revised-draft" as const,
@@ -47,9 +53,9 @@ export default function WorkflowStepper({
           const isComplete = index < activeIndex;
 
           return (
-            <li key={step.id} className="flex min-w-[88px] flex-1 items-stretch">
+            <li key={step.id} className="flex min-w-[72px] flex-1 items-stretch">
               <div
-                className={`flex flex-1 flex-col border-b-2 px-2 py-3 transition-colors sm:px-3 sm:py-4 ${
+                className={`flex flex-1 flex-col border-b-2 px-1.5 py-3 transition-colors sm:px-2 sm:py-4 ${
                   isActive
                     ? "border-accent"
                     : isComplete
@@ -65,7 +71,7 @@ export default function WorkflowStepper({
                   {String(index + 1).padStart(2, "0")}
                 </span>
                 <span
-                  className={`mt-0.5 font-serif text-xs font-medium sm:text-sm ${
+                  className={`mt-0.5 font-serif text-[11px] font-medium sm:text-sm ${
                     isActive ? "text-ink" : "text-ink-muted"
                   }`}
                 >
@@ -77,7 +83,7 @@ export default function WorkflowStepper({
               </div>
               {index < steps.length - 1 && (
                 <div
-                  className="hidden w-4 shrink-0 items-center justify-center text-ink-faint lg:flex"
+                  className="hidden w-3 shrink-0 items-center justify-center text-ink-faint lg:flex"
                   aria-hidden
                 >
                   →

@@ -92,20 +92,20 @@ export interface ReviewSuggestion {
 export type WorkflowPhase =
   | "idle"
   | "draft-v1-complete"
-  | "review-pending"
+  | "draft-review-loading"
+  | "draft-review-complete"
+  | "approval-pending"
   | "revising"
   | "revised-complete";
 
-export interface RevisionRequest {
-  originalDraft: GenerationResult;
-  assetIds: string[];
-  documentIds?: string[];
-  issueIds: string[];
-  options: GenerationOptions;
-  checklistItems: ReviewChecklistId[];
-  acceptedSuggestions: string[];
-  professorInstruction: string;
-}
+export type {
+  ReviewFindingCategory,
+  FindingDecision,
+  ReviewFinding,
+  ReviewRequest,
+  RevisionSummary,
+  RevisionRequest,
+} from "@/types/review";
 
 export interface EducationalAsset {
   id: string;

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import OpenAI from "openai";
 import type { GenerationResult, RevisionRequest } from "@/types";
 import { buildRevisionPrompt } from "@/lib/revision-prompt";
+import { buildLocalRevisionSummary } from "@/lib/revision-summary";
 import {
   applyOutputFilters,
   hasDraftContent,
@@ -44,16 +45,19 @@ export async function POST(request: Request) {
       );
     }
 
+    const approvedFindings = body.approvedFindings ?? [];
+    const ignoredFindings = body.ignoredFindings ?? [];
+
     const hasRevisionInput =
       body.checklistItems.length > 0 ||
-      body.acceptedSuggestions.length > 0 ||
+      approvedFindings.length > 0 ||
       body.professorInstruction.trim().length > 0;
 
     if (!hasRevisionInput) {
       return NextResponse.json(
         {
           error:
-            "검수 체크리스트, 반영할 제안, 또는 교수님 추가 지시 중 하나 이상을 지정해 주세요.",
+            "반영할 검토 제안, 체크리스트, 또는 교수님 추가 지시 중 하나 이상을 지정해 주세요.",
         },
         { status: 400 }
       );
@@ -74,8 +78,8 @@ export async function POST(request: Request) {
       messages: [
         {
           role: "system",
-          content: `당신은 한국 형사법 교수의 출제 초안을 교수 검수 후 수정하는 전문 보조자입니다.
-1차 초안의 유용한 부분을 보존하면서 검수 지시를 반영한 수정 초안을 작성합니다.
+          content: `당신은 한국 형사법 교수의 출제 초안을 교수 승인 후 수정하는 전문 보조자입니다.
+1차 초안의 유용한 부분을 보존하면서 승인된 검토 내용만 반영한 수정 초안을 작성합니다.
 반드시 유효한 JSON 객체 하나만 반환하세요. 모든 필드 값은 문자열이어야 합니다.
 허위 판례 인용·조문 날조·법적 결론의 단정을 금지합니다.`,
         },
@@ -112,7 +116,31 @@ export async function POST(request: Request) {
       );
     }
 
-    return NextResponse.json({ result });
+    const approvedForSummary = approvedFindings.map((f, index) => ({
+      id: `approved-${index}`,
+      category: f.category,
+      finding: f.finding,
+      suggestedAction: f.suggestedAction,
+      decision: "accept" as const,
+    }));
+
+    const ignoredForSummary = ignoredFindings.map((f, index) => ({
+      id: `ignored-${index}`,
+      category: f.category,
+      finding: f.finding,
+      suggestedAction: f.suggestedAction,
+      decision: "ignore" as const,
+    }));
+
+    const revisionSummary = buildLocalRevisionSummary(
+      approvedForSummary,
+      ignoredForSummary,
+      body.checklistItems,
+      body.professorInstruction,
+      body.options
+    );
+
+    return NextResponse.json({ result, revisionSummary });
   } catch (error) {
     console.error("Revision error:", error);
     return NextResponse.json(

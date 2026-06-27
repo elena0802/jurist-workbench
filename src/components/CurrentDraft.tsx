@@ -80,13 +80,19 @@ export default function CurrentDraft({
             ? "수정 초안 v2 완료"
             : workflowPhase === "revising"
               ? "수정 초안 작성 중"
-              : workflowPhase === "review-pending"
-                ? "교수 검수 대기"
-                : hasDraft
-                  ? "검수 대기 중"
-                  : isEmpty
-                    ? "지식 베이스와 평가 쟁점을 지정하세요"
-                    : "초안 작성 준비됨"}
+              : workflowPhase === "approval-pending"
+                ? "교수 승인 대기"
+                : workflowPhase === "draft-review-loading"
+                  ? "초안 검토 중"
+                  : workflowPhase === "draft-review-complete"
+                    ? "초안 검토 완료"
+                    : workflowPhase === "draft-v1-complete"
+                      ? "출제 초안 작성 완료"
+                      : hasDraft
+                        ? "검수 대기 중"
+                        : isEmpty
+                          ? "지식 베이스와 평가 쟁점을 지정하세요"
+                          : "초안 작성 준비됨"}
         </p>
       </div>
 
@@ -96,8 +102,9 @@ export default function CurrentDraft({
             <li>1. 참고 자료 편람</li>
             <li>2. 평가 쟁점 설계</li>
             <li>3. 출제 초안 작성</li>
-            <li>4. 교수 검수</li>
-            <li>5. 수정 초안</li>
+            <li>4. 초안 검토</li>
+            <li>5. 교수 승인</li>
+            <li>6. 수정 초안</li>
           </ol>
         </div>
       )}
