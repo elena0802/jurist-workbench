@@ -19,6 +19,7 @@ export function buildLocalRevisionSummary(
   const rulesApplied: string[] = [];
   const rulesImproved: string[] = [];
   const rulesPreserved: string[] = [];
+  const ruleSatisfactionPlans: string[] = [];
 
   for (const finding of approvedFindings) {
     applied.push(`[${finding.category}] ${finding.suggestedAction}`);
@@ -45,11 +46,18 @@ export function buildLocalRevisionSummary(
         rulesImproved.push(
           `${rule.ruleId} (${rule.statusLabel}) → ${finding.suggestedAction}`
         );
+
+        ruleSatisfactionPlans.push(
+          `${rule.ruleId}: 변경 — ${finding.suggestedAction} · 충족 목표 — ${rule.satisfactionTarget} · 기대 — ${rule.expectedImprovement}`
+        );
       }
 
       if (rule.status === "satisfied") {
         rulesPreserved.push(
           `${rule.ruleId} (${rule.statusLabel}): ${rule.title}`
+        );
+        ruleSatisfactionPlans.push(
+          `${rule.ruleId}: 유지 — ${rule.title} · 충족 목표 달성 유지`
         );
       }
     }
@@ -131,6 +139,10 @@ export function buildLocalRevisionSummary(
         ? rulesImproved
         : ["미충족·부분 충족 원칙 개선 항목 없음"],
     rulesPreserved,
+    ruleSatisfactionPlans:
+      ruleSatisfactionPlans.length > 0
+        ? ruleSatisfactionPlans
+        : ["원칙 충족 방안 정보 없음"],
     professorInstructionApplied: professorInstruction.trim().length > 0,
     professorInstructionNote: professorInstruction.trim()
       ? "교수님 추가 지시를 반영하였습니다."
@@ -155,6 +167,7 @@ export function normalizeRevisionSummary(input: unknown): RevisionSummary | null
   const rulesApplied = toStringArray(record.rulesApplied);
   const rulesImproved = toStringArray(record.rulesImproved);
   const rulesPreserved = toStringArray(record.rulesPreserved);
+  const ruleSatisfactionPlans = toStringArray(record.ruleSatisfactionPlans);
 
   return {
     applied,
@@ -164,6 +177,7 @@ export function normalizeRevisionSummary(input: unknown): RevisionSummary | null
     rulesApplied,
     rulesImproved,
     rulesPreserved,
+    ruleSatisfactionPlans,
     professorInstructionApplied: Boolean(record.professorInstructionApplied),
     professorInstructionNote: String(
       record.professorInstructionNote ?? ""

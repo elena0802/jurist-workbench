@@ -126,7 +126,7 @@ function finalizeFinding(
 
   if (!rawAppliedRules || (Array.isArray(rawAppliedRules) && rawAppliedRules.length === 0)) {
     const relevant = getRelevantRules(issueIds, options);
-    appliedRules = matchRulesToFinding(payload, relevant);
+    appliedRules = matchRulesToFinding(payload, relevant, issueIds);
   }
 
   if (appliedRules.length === 0) {

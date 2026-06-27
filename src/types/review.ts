@@ -25,6 +25,12 @@ export interface AppliedRule {
   status: RuleStatus;
   statusLabel: "충족" | "부분 충족" | "미충족";
   explanation: string;
+  diagnosticQuestion: string;
+  draftDiagnosis: string;
+  violationReason: string;
+  revisionGuidance: string;
+  satisfactionTarget: string;
+  expectedImprovement: string;
 }
 
 export interface ReviewFindingPayload {
@@ -61,6 +67,7 @@ export interface RevisionSummary {
   rulesApplied: string[];
   rulesImproved: string[];
   rulesPreserved: string[];
+  ruleSatisfactionPlans: string[];
   professorInstructionApplied: boolean;
   professorInstructionNote: string;
   difficultyChange: string;

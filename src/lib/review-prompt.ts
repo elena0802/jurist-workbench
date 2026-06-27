@@ -82,7 +82,13 @@ ${rulesBlock}
 1. 위 출제 원칙을 기준으로 초안을 점검하세요. 원칙 ID를 임의로 만들지 마세요.
 2. 각 finding에 appliedRules 1~3개를 첨부하세요. ruleId는 반드시 위 목록에서만 선택하세요.
 3. appliedRules.status는 satisfied(충족), partial(부분 충족), violated(미충족) 중 하나입니다.
-4. explanation에는 간결한 검토 근거만 기술하세요. 내부 추론 과정은 노출하지 마세요.
+4. appliedRules마다 explanation과 함께 아래 검토 논리 필드를 작성하세요 (간결한 교수 검토 문체, 내부 추론·chain-of-thought 금지):
+   - diagnosticQuestion: 점검 질문
+   - draftDiagnosis: 현재 초안 진단
+   - violationReason: 원칙 미충족·부분 충족 사유
+   - revisionGuidance: 수정 방향
+   - satisfactionTarget: 원칙 충족 방안
+   - expectedImprovement: 기대 효과
 5. 선택 문서·쟁점·초안 내용과 원칙을 연결하세요.
 6. 허위 판례 인용·원문 인용 허위 생성을 금지합니다.
 7. 카테고리: 사실관계, 쟁점, 난이도, 채점기준, 출제의도, 구성
@@ -109,7 +115,13 @@ ${rulesBlock}
         {
           "ruleId": "CRIM-FACT-001",
           "status": "violated",
-          "explanation": "원칙 점검 결과에 대한 간결한 검토 근거"
+          "explanation": "원칙 점검 결과에 대한 간결한 검토 근거",
+          "diagnosticQuestion": "점검 질문",
+          "draftDiagnosis": "현재 초안 진단",
+          "violationReason": "미충족·부분 충족 사유",
+          "revisionGuidance": "수정 방향",
+          "satisfactionTarget": "원칙 충족 방안",
+          "expectedImprovement": "기대 효과"
         }
       ]
     }

@@ -358,6 +358,15 @@ export default function WorkbenchClient() {
     [reviewFindings]
   );
 
+  const ruleReviewComplete = useMemo(
+    () =>
+      workflowPhase === "draft-review-complete" ||
+      workflowPhase === "approval-pending" ||
+      workflowPhase === "revising" ||
+      workflowPhase === "revised-complete",
+    [workflowPhase]
+  );
+
   return (
     <div className="min-h-screen bg-paper">
       <Header variant="workbench" />
@@ -467,6 +476,7 @@ export default function WorkbenchClient() {
               appliedRuleCount={appliedRuleCount}
               partialRuleCount={ruleInspection.partial}
               violatedRuleCount={ruleInspection.violated}
+              ruleReviewComplete={ruleReviewComplete}
             />
           </div>
         </div>
@@ -481,6 +491,7 @@ export default function WorkbenchClient() {
             appliedRuleCount={appliedRuleCount}
             partialRuleCount={ruleInspection.partial}
             violatedRuleCount={ruleInspection.violated}
+            ruleReviewComplete={ruleReviewComplete}
           />
         </div>
       </main>

@@ -90,33 +90,116 @@ function inferStatusFromFinding(finding: Partial<ReviewFindingPayload>): RuleSta
   return "partial";
 }
 
+export function fillAppliedRuleReasoning(
+  partial: Partial<AppliedRule>,
+  rule: ExamRule | undefined,
+  finding: ReviewFindingPayload,
+  issueNames: string[] = []
+): AppliedRule {
+  const status: RuleStatus =
+    partial.status === "satisfied" ||
+    partial.status === "partial" ||
+    partial.status === "violated"
+      ? partial.status
+      : inferStatusFromFinding(finding);
+
+  const statusLabel = partial.statusLabel ?? ruleStatusLabel(status);
+  const title = rule?.title ?? partial.title ?? "등록되지 않은 원칙";
+  const issueLabel =
+    issueNames.length > 0 ? issueNames.join(", ") : "선택 쟁점";
+
+  const defaultExplanation =
+    status === "satisfied"
+      ? `「${title}」에 부합하는 구조로 보입니다.`
+      : status === "partial"
+        ? `「${rule?.checkQuestion ?? title}」 — 일부 요건은 충족하나 보완 여지가 있습니다.`
+        : `「${rule?.checkQuestion ?? title}」 — ${rule?.weakPattern ?? "출제 원칙 미충족 요소가 있습니다."}`;
+
+  const diagnosticQuestion =
+    partial.diagnosticQuestion?.trim() ||
+    rule?.checkQuestion ||
+    `${title} 관련 초안이 출제 원칙에 부합하는지 점검합니다.`;
+
+  const draftDiagnosis =
+    partial.draftDiagnosis?.trim() ||
+    (finding.finding
+      ? `현재 초안은 ${finding.finding}`
+      : rule?.weakPattern
+        ? `현재 초안에서 ${rule.weakPattern}`
+        : "현재 초안의 해당 영역을 점검할 필요가 있습니다.");
+
+  const violationReason =
+    partial.violationReason?.trim() ||
+    (status === "satisfied"
+      ? `「${title}」에 대체로 부합하며, ${rule?.goodPattern ?? "출제 구조가 유지됩니다."}`
+      : rule?.weakPattern ||
+        finding.recommendedReason ||
+        `선택 쟁점(${issueLabel})과의 정합성 측면에서 보완이 필요합니다.`);
+
+  const revisionGuidance =
+    partial.revisionGuidance?.trim() ||
+    rule?.revisionStrategy ||
+    finding.suggestedAction ||
+    rule?.goodPattern ||
+    "출제 원칙에 맞게 해당 영역을 구체적으로 보완하세요.";
+
+  const satisfactionTarget =
+    partial.satisfactionTarget?.trim() ||
+    rule?.goodPattern ||
+    `「${title}」이 드러나는 출제 구조`;
+
+  const expectedImprovement =
+    partial.expectedImprovement?.trim() ||
+    finding.expectedEffect ||
+    "수정 후 출제·평가 품질이 개선될 것으로 예상됩니다.";
+
+  return {
+    ruleId: partial.ruleId ?? rule?.id ?? "UNKNOWN",
+    title,
+    category: String(rule?.category ?? partial.category ?? finding.category),
+    status,
+    statusLabel,
+    explanation: partial.explanation?.trim() || defaultExplanation,
+    diagnosticQuestion,
+    draftDiagnosis,
+    violationReason,
+    revisionGuidance,
+    satisfactionTarget,
+    expectedImprovement,
+  };
+}
+
 function buildAppliedRule(
   rule: ExamRule,
   status: RuleStatus,
+  finding: ReviewFindingPayload,
+  issueNames: string[],
   explanation?: string
 ): AppliedRule {
-  const statusLabel = ruleStatusLabel(status);
-  const defaultExplanation =
-    status === "satisfied"
-      ? `「${rule.title}」에 부합하는 구조로 보입니다.`
-      : status === "partial"
-        ? `「${rule.checkQuestion}」 — 일부 요건은 충족하나 보완 여지가 있습니다. ${rule.weakPattern}`
-        : `「${rule.checkQuestion}」 — ${rule.weakPattern}`;
-
-  return {
-    ruleId: rule.id,
-    title: rule.title,
-    category: rule.category,
-    status,
-    statusLabel,
-    explanation: explanation?.trim() || defaultExplanation,
-  };
+  return fillAppliedRuleReasoning(
+    {
+      ruleId: rule.id,
+      title: rule.title,
+      category: rule.category,
+      status,
+      explanation:
+        explanation?.trim() ||
+        (finding.reasoningBasis
+          ? `${rule.checkQuestion} 검토 결과: ${finding.finding}`
+          : undefined),
+    },
+    rule,
+    finding,
+    issueNames
+  );
 }
 
 export function matchRulesToFinding(
   finding: ReviewFindingPayload,
-  relevantRules: ExamRule[]
+  relevantRules: ExamRule[],
+  selectedIssueIds: string[] = []
 ): AppliedRule[] {
+  const issueNames = selectedIssueNames(selectedIssueIds);
   const pool =
     relevantRules.length > 0
       ? relevantRules
@@ -149,13 +232,7 @@ export function matchRulesToFinding(
   }
 
   return picked.slice(0, 3).map((rule) =>
-    buildAppliedRule(
-      rule,
-      status,
-      finding.reasoningBasis
-        ? `${rule.checkQuestion} 검토 결과: ${finding.finding}`
-        : undefined
-    )
+    buildAppliedRule(rule, status, finding, issueNames)
   );
 }
 
@@ -196,7 +273,7 @@ export function buildDefaultAppliedRules(
   const status = inferStatusFromFinding(finding);
   const rule = pool[0] ?? examRules.find((r) => r.category === finding.category) ?? examRules[0]!;
 
-  return [buildAppliedRule(rule, status)];
+  return [buildAppliedRule(rule, status, finding, issueNames)];
 }
 
 export function normalizeAppliedRules(
@@ -222,18 +299,25 @@ export function normalizeAppliedRules(
           ? statusRaw
           : inferStatusFromFinding(finding);
 
-      return {
-        ruleId,
-        title: known?.title ?? String(record.title ?? "등록되지 않은 원칙"),
-        category: String(known?.category ?? finding.category),
-        status,
-        statusLabel: ruleStatusLabel(status),
-        explanation:
-          String(record.explanation ?? "").trim() ||
-          (known
-            ? buildAppliedRule(known, status).explanation
-            : "검토 근거를 확인할 수 없습니다."),
-      } satisfies AppliedRule;
+      return fillAppliedRuleReasoning(
+        {
+          ruleId,
+          title: known?.title ?? String(record.title ?? "등록되지 않은 원칙"),
+          category: String(known?.category ?? finding.category),
+          status,
+          statusLabel: ruleStatusLabel(status),
+          explanation: String(record.explanation ?? ""),
+          diagnosticQuestion: String(record.diagnosticQuestion ?? ""),
+          draftDiagnosis: String(record.draftDiagnosis ?? ""),
+          violationReason: String(record.violationReason ?? ""),
+          revisionGuidance: String(record.revisionGuidance ?? ""),
+          satisfactionTarget: String(record.satisfactionTarget ?? ""),
+          expectedImprovement: String(record.expectedImprovement ?? ""),
+        },
+        known,
+        finding,
+        selectedIssueNames(selectedIssueIds)
+      );
     })
     .filter((item): item is AppliedRule => item !== null);
 

@@ -13,7 +13,11 @@ function formatAppliedRules(
   return rules
     .map((rule) => {
       const label = rule.statusLabel ?? ruleStatusLabel(rule.status);
-      return `  · [${rule.ruleId}] ${rule.title} — ${label}: ${rule.explanation}`;
+      return `  · [${rule.ruleId}] ${rule.title} — ${label}
+    현재 초안 진단: ${rule.draftDiagnosis}
+    수정 방향: ${rule.revisionGuidance}
+    원칙 충족 방안: ${rule.satisfactionTarget}
+    기대 효과: ${rule.expectedImprovement}`;
     })
     .join("\n");
 }
@@ -75,8 +79,11 @@ ${formatAppliedRules(f.appliedRules)}`;
 - 허위 판례 인용·조문 날조·법적 결론의 단정을 금지합니다.
 
 ## 출제 원칙 반영 지침
-- 미충족·부분 충족으로 표시된 원칙은 수정을 통해 개선하세요.
-- 충족으로 표시된 원칙에 해당하는 강점은 과도하게 수정하지 마세요.
+- 승인된 appliedRules의 revisionGuidance를 지침으로 삼되, 문장을 그대로 반복하지 말고 초안에 구체적 변경을 반영하세요.
+- satisfactionTarget이 실현되도록 사실관계·쟁점 구조·채점기준·출제의도·검수 메모 중 해당 영역을 실질 수정하세요.
+- expectedImprovement가 드러나도록 수정 결과를 설계하세요.
+- 미충족·부분 충족 원칙은 수정을 통해 개선하세요.
+- 충족 원칙에 해당하는 강점은 과도하게 수정하지 마세요.
 - 1차 초안의 학술적 톤과 유효한 구조는 보존하세요.
 
 ## 1차 출제 초안

@@ -19,6 +19,7 @@ interface CurrentDraftProps {
   appliedRuleCount?: number;
   partialRuleCount?: number;
   violatedRuleCount?: number;
+  ruleReviewComplete?: boolean;
 }
 
 function formatVolume(documentIds: string[]) {
@@ -35,6 +36,7 @@ export default function CurrentDraft({
   appliedRuleCount = 0,
   partialRuleCount = 0,
   violatedRuleCount = 0,
+  ruleReviewComplete = false,
 }: CurrentDraftProps) {
   const selectedCollections = getCollectionsForDocuments(selectedDocumentIds);
 
@@ -227,6 +229,9 @@ export default function CurrentDraft({
                       </span>
                     )}
                   </p>
+                )}
+                {ruleReviewComplete && (
+                  <p className="text-[10px] text-ink-muted">원칙 검토 완료</p>
                 )}
               </>
             )}

@@ -49,6 +49,7 @@ const emptySummary: RevisionSummary = {
   rulesApplied: [],
   rulesImproved: [],
   rulesPreserved: [],
+  ruleSatisfactionPlans: [],
   professorInstructionApplied: false,
   professorInstructionNote: "교수님 추가 지시 없음",
   difficultyChange: "—",
@@ -99,23 +100,35 @@ export default function RevisionSummaryPanel({
           </p>
 
           {hasRules ? (
-            <div className="mt-4 grid gap-4 sm:grid-cols-3">
+            <div className="mt-4 space-y-4">
+              <div className="grid gap-4 sm:grid-cols-3">
+                <SummaryList
+                  title="적용 원칙 (Rule ID)"
+                  items={safe.rulesApplied ?? []}
+                  emptyText="적용 원칙 없음"
+                  mono
+                />
+                <SummaryList
+                  title="개선"
+                  items={(safe.rulesImproved ?? []).map(
+                    (item) => `개선 · ${item}`
+                  )}
+                  emptyText="개선 항목 없음"
+                  mono
+                />
+                <SummaryList
+                  title="유지"
+                  items={(safe.rulesPreserved ?? []).map(
+                    (item) => `유지 · ${item}`
+                  )}
+                  emptyText="유지 항목 없음"
+                  mono
+                />
+              </div>
               <SummaryList
-                title="적용 원칙 (Rule ID)"
-                items={safe.rulesApplied ?? []}
-                emptyText="적용 원칙 없음"
-                mono
-              />
-              <SummaryList
-                title="개선"
-                items={(safe.rulesImproved ?? []).map((item) => `개선 · ${item}`)}
-                emptyText="개선 항목 없음"
-                mono
-              />
-              <SummaryList
-                title="유지"
-                items={(safe.rulesPreserved ?? []).map((item) => `유지 · ${item}`)}
-                emptyText="유지 항목 없음"
+                title="원칙 충족 방안"
+                items={safe.ruleSatisfactionPlans ?? []}
+                emptyText="원칙 충족 방안 정보 없음"
                 mono
               />
             </div>

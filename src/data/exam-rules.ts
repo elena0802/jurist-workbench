@@ -10,6 +10,7 @@ export interface ExamRule {
   goodPattern: string;
   weakPattern: string;
   sourceNote: string;
+  revisionStrategy?: string;
 }
 
 export const examRules: ExamRule[] = [
@@ -27,6 +28,8 @@ export const examRules: ExamRule[] = [
     weakPattern:
       "문제 본문에서 오인, 방위, 착오가 지나치게 명시되어 판단 과정이 단순해진다.",
     sourceNote: "원로 교수 검수 원칙으로 축적 예정",
+    revisionStrategy:
+      "초반에는 객관적 방위상황을 제시하고, 중반 이후 인식 착오 단서를 드러내 쟁점이 단계적으로 열리게 합니다.",
   },
   {
     id: "CRIM-ISSUE-001",

@@ -58,8 +58,8 @@ export default function ProfessorReviewPanel({
           교수 승인
         </h2>
         <p className="mt-1 text-xs leading-relaxed text-ink-muted">
-          검토 제안의 반영 여부를 확정하고, 체크리스트·추가 지시를 선택한 뒤
-          수정 초안을 작성하세요.
+          검토 제안의 반영 여부를 확정합니다. 승인 시 적용 원칙·수정 방향·충족
+          목표가 수정 초안에 반영됩니다.
         </p>
       </div>
 
@@ -74,6 +74,8 @@ export default function ProfessorReviewPanel({
           <ReviewFindingsList
             findings={findings}
             onDecisionChange={onFindingDecision}
+            mode="professor-approval"
+            showEvidence={false}
             emptyMessage="검토 제안이 없습니다. 체크리스트와 추가 지시로 수정할 수 있습니다."
           />
         </div>

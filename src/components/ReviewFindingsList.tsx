@@ -8,6 +8,7 @@ import type {
   RuleStatus,
 } from "@/types";
 import { getExamRuleById } from "@/data/exam-rules";
+import { fillAppliedRuleReasoning } from "@/lib/rule-matching";
 
 interface ReviewFindingsListProps {
   findings: ReviewFinding[];
@@ -17,6 +18,7 @@ interface ReviewFindingsListProps {
   showEvidence?: boolean;
   showAppliedRules?: boolean;
   expandFirstEvidence?: boolean;
+  mode?: "draft-review" | "professor-approval";
 }
 
 const severityLabels: Record<ReviewFindingSeverity, string> = {
@@ -37,37 +39,131 @@ const ruleStatusStyles: Record<RuleStatus, string> = {
   violated: "border-accent/45 bg-accent/15 text-accent",
 };
 
-function safeRule(rule: AppliedRule): AppliedRule {
-  const known = getExamRuleById(rule.ruleId);
-  return {
-    ruleId: rule.ruleId || "UNKNOWN",
-    title: known?.title ?? rule.title ?? "등록되지 않은 원칙",
-    category: rule.category ?? known?.category ?? "구성",
-    status: rule.status ?? "partial",
-    statusLabel: rule.statusLabel ?? "부분 충족",
-    explanation: rule.explanation?.trim() || "검토 근거를 확인할 수 없습니다.",
-  };
+function safeRule(rule: AppliedRule, finding: ReviewFinding): AppliedRule {
+  return fillAppliedRuleReasoning(
+    rule,
+    getExamRuleById(rule.ruleId),
+    finding,
+    []
+  );
 }
 
-function AppliedRulesBlock({
+function RuleReasoningCard({
+  rule,
+  defaultOpenDetails,
+  compact,
+}: {
+  rule: AppliedRule;
+  defaultOpenDetails: boolean;
+  compact: boolean;
+}) {
+  return (
+    <li
+      className={`rounded-sm border border-border/60 bg-paper/85 ${
+        compact ? "px-2 py-1.5" : "px-2.5 py-2"
+      }`}
+    >
+      <div className="mb-1.5">
+        <p className="text-[10px] font-semibold tracking-[0.05em] text-ink-faint">
+          출제 원칙
+        </p>
+        <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
+          <span className="font-mono text-[10px] font-medium text-ink-muted">
+            {rule.ruleId}
+          </span>
+          <span
+            className={`rounded-sm border px-1.5 py-px text-[10px] font-semibold ${ruleStatusStyles[rule.status]}`}
+          >
+            {rule.statusLabel}
+          </span>
+        </div>
+        <p
+          className={`mt-0.5 font-medium leading-snug text-ink ${
+            compact ? "text-[10px]" : "text-[11px]"
+          }`}
+        >
+          {rule.title}
+        </p>
+      </div>
+
+      <div className="space-y-1.5 text-[10px] leading-relaxed">
+        <div>
+          <p className="font-medium text-ink-faint">현재 초안 진단</p>
+          <p className="text-ink-muted">{rule.draftDiagnosis}</p>
+        </div>
+        <div>
+          <p className="font-medium text-ink-faint">수정 방향</p>
+          <p className="text-ink-muted">{rule.revisionGuidance}</p>
+        </div>
+        <div>
+          <p className="font-medium text-ink-faint">기대 효과</p>
+          <p className="text-ink-muted">{rule.expectedImprovement}</p>
+        </div>
+      </div>
+
+      <details
+        className="mt-1.5 rounded-sm border border-border/50 bg-paper-dark/20"
+        open={defaultOpenDetails}
+      >
+        <summary className="cursor-pointer px-2 py-1 text-[10px] text-ink-faint hover:text-ink-muted">
+          상세 검토 논리
+        </summary>
+        <div className="space-y-1.5 border-t border-border/40 px-2 py-1.5 text-[10px] leading-relaxed">
+          <div>
+            <p className="font-medium text-ink-faint">점검 질문</p>
+            <p className="text-ink-muted">{rule.diagnosticQuestion}</p>
+          </div>
+          <div>
+            <p className="font-medium text-ink-faint">미충족 사유</p>
+            <p className="text-ink-muted">{rule.violationReason}</p>
+          </div>
+          <div>
+            <p className="font-medium text-ink-faint">원칙 충족 방안</p>
+            <p className="text-ink-muted">{rule.satisfactionTarget}</p>
+          </div>
+          <div>
+            <p className="font-medium text-ink-faint">검토 요약</p>
+            <p className="text-ink-muted">{rule.explanation}</p>
+          </div>
+        </div>
+      </details>
+    </li>
+  );
+}
+
+function RuleReasoningBlock({
   rules,
+  finding,
   compact = false,
+  expandFirstRule = false,
 }: {
   rules: AppliedRule[];
+  finding: ReviewFinding;
   compact?: boolean;
+  expandFirstRule?: boolean;
 }) {
   const safeRules =
     rules.length > 0
-      ? rules.map(safeRule)
+      ? rules.map((r) => safeRule(r, finding))
       : [
-          {
-            ruleId: "—",
-            title: "등록되지 않은 원칙",
-            category: "구성",
-            status: "partial" as RuleStatus,
-            statusLabel: "부분 충족" as const,
-            explanation: "적용 원칙 정보를 불러오지 못했습니다.",
-          },
+          safeRule(
+            {
+              ruleId: "—",
+              title: "등록되지 않은 원칙",
+              category: "구성",
+              status: "partial",
+              statusLabel: "부분 충족",
+              explanation: "적용 원칙 정보를 불러오지 못했습니다.",
+              diagnosticQuestion: "점검 질문을 확인할 수 없습니다.",
+              draftDiagnosis: "현재 초안 진단을 확인할 수 없습니다.",
+              violationReason: "미충족 사유를 확인할 수 없습니다.",
+              revisionGuidance: finding.suggestedAction || "수정 방향을 확인할 수 없습니다.",
+              satisfactionTarget: "원칙 충족 방안을 확인할 수 없습니다.",
+              expectedImprovement:
+                finding.expectedEffect || "기대 효과를 확인할 수 없습니다.",
+            },
+            finding
+          ),
         ];
 
   return (
@@ -77,34 +173,43 @@ function AppliedRulesBlock({
       }`}
     >
       <p className="text-[10px] font-semibold tracking-[0.06em] text-ink-faint">
-        적용 원칙
+        검토 논리
       </p>
-      <ul className={`space-y-1.5 ${compact ? "mt-1" : "mt-1.5"}`}>
-        {safeRules.map((rule) => (
-          <li
-            key={`${rule.ruleId}-${rule.title}`}
-            className="rounded-sm border border-border/50 bg-paper/80 px-2 py-1.5"
-          >
-            <div className="flex flex-wrap items-center gap-1.5">
-              <span className="font-mono text-[10px] font-medium text-ink-muted">
-                {rule.ruleId}
-              </span>
-              <span
-                className={`rounded-sm border px-1.5 py-px text-[10px] font-semibold ${ruleStatusStyles[rule.status]}`}
-              >
-                {rule.statusLabel}
-              </span>
-            </div>
-            <p
-              className={`mt-0.5 font-medium leading-snug text-ink ${
-                compact ? "text-[10px]" : "text-[11px]"
-              }`}
-            >
-              {rule.title}
-            </p>
-            <p className="mt-0.5 text-[10px] leading-relaxed text-ink-muted">
-              {rule.explanation}
-            </p>
+      <ul className={`space-y-2 ${compact ? "mt-1" : "mt-1.5"}`}>
+        {safeRules.map((rule, ruleIndex) => (
+          <RuleReasoningCard
+            key={`${rule.ruleId}-${ruleIndex}`}
+            rule={rule}
+            compact={compact}
+            defaultOpenDetails={expandFirstRule && ruleIndex === 0}
+          />
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function ApprovalReasoningNote({ finding }: { finding: ReviewFinding }) {
+  if (finding.decision !== "accept") return null;
+
+  const acceptedRules = (finding.appliedRules ?? []).map((rule) =>
+    safeRule(rule, finding)
+  );
+
+  if (acceptedRules.length === 0) return null;
+
+  return (
+    <div className="mt-2.5 rounded-sm border border-accent/25 bg-accent/[0.04] px-2.5 py-2">
+      <p className="text-[10px] font-semibold text-accent">교수 승인 검토 논리</p>
+      <ul className="mt-1 space-y-1.5">
+        {acceptedRules.map((rule) => (
+          <li key={rule.ruleId} className="text-[10px] leading-relaxed text-ink-muted">
+            <span className="font-mono text-ink-faint">{rule.ruleId}</span>
+            <span className="mx-1">·</span>
+            <span className="text-ink-muted">{rule.revisionGuidance}</span>
+            <span className="mt-0.5 block text-ink-faint">
+              충족 목표: {rule.satisfactionTarget}
+            </span>
           </li>
         ))}
       </ul>
@@ -175,6 +280,7 @@ export default function ReviewFindingsList({
   showEvidence = true,
   showAppliedRules = true,
   expandFirstEvidence = false,
+  mode = "draft-review",
 }: ReviewFindingsListProps) {
   if (!findings.length) {
     return (
@@ -223,12 +329,14 @@ export default function ReviewFindingsList({
               </p>
             )}
             {showAppliedRules && (
-              <AppliedRulesBlock
+              <RuleReasoningBlock
                 rules={finding.appliedRules ?? []}
+                finding={finding}
                 compact={!isFirst}
+                expandFirstRule={isFirst}
               />
             )}
-            {showEvidence && (
+            {showEvidence && mode === "draft-review" && (
               <FindingReviewBasis
                 finding={finding}
                 defaultOpen={expandFirstEvidence && isFirst}
@@ -259,6 +367,9 @@ export default function ReviewFindingsList({
                   무시
                 </button>
               </div>
+            )}
+            {mode === "professor-approval" && (
+              <ApprovalReasoningNote finding={finding} />
             )}
           </li>
         );
