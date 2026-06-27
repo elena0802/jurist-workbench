@@ -7,7 +7,7 @@ const phaseLabels: Record<WorkflowPhase, string> = {
   "draft-review-complete": "초안 검토 완료",
   "approval-pending": "교수 승인 대기",
   revising: "수정 초안 작성 중",
-  "revised-complete": "수정 초안 작성 완료",
+  "revised-complete": "수정 반영 평가 완료",
 };
 
 const phaseStyles: Record<WorkflowPhase, string> = {

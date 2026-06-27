@@ -214,9 +214,11 @@ function DraftReviewCard({
 function ApprovalCompactCard({
   finding,
   onDecisionChange,
+  readOnly = false,
 }: {
   finding: ReviewFinding;
-  onDecisionChange: (id: string, decision: FindingDecision) => void;
+  onDecisionChange?: (id: string, decision: FindingDecision) => void;
+  readOnly?: boolean;
 }) {
   const isAccept = finding.decision === "accept";
   const isIgnore = finding.decision === "ignore";
@@ -255,7 +257,26 @@ function ApprovalCompactCard({
             {finding.finding}
           </p>
         </div>
-        <DecisionButtons finding={finding} onDecisionChange={onDecisionChange} />
+        {readOnly ? (
+          <span
+            className={`shrink-0 rounded-sm border px-1.5 py-px text-[10px] font-medium ${
+              isAccept
+                ? "border-accent/30 bg-accent/10 text-accent"
+                : isIgnore
+                  ? "border-border text-ink-faint"
+                  : "border-border text-ink-muted"
+            }`}
+          >
+            {isAccept ? "반영" : isIgnore ? "무시" : "미결정"}
+          </span>
+        ) : (
+          onDecisionChange && (
+            <DecisionButtons
+              finding={finding}
+              onDecisionChange={onDecisionChange}
+            />
+          )
+        )}
       </div>
     </li>
   );
@@ -285,7 +306,8 @@ export default function ReviewFindingsList({
           <ApprovalCompactCard
             key={finding.id}
             finding={finding}
-            onDecisionChange={onDecisionChange!}
+            onDecisionChange={readOnly ? undefined : onDecisionChange}
+            readOnly={readOnly}
           />
         ) : (
           <DraftReviewCard

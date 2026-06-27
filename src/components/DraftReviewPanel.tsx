@@ -12,6 +12,9 @@ import ReviewHistorySignals from "@/components/ReviewHistorySignals";
 import DraftReviewExecutiveSummary from "@/components/DraftReviewExecutiveSummary";
 import ReviewFindingsList from "@/components/ReviewFindingsList";
 
+import type { ProfessorVerdictResult } from "@/lib/professor-verdict";
+import type { ReviewHistorySignal } from "@/lib/review-history";
+
 interface DraftReviewPanelProps {
   findings: ReviewFinding[];
   selectedIssues: LegalIssue[];
@@ -23,6 +26,11 @@ interface DraftReviewPanelProps {
   isLoading?: boolean;
   warning?: string | null;
   disabled?: boolean;
+  readOnly?: boolean;
+  showContinue?: boolean;
+  revisedDraftExists?: boolean;
+  verdictSnapshot?: ProfessorVerdictResult | null;
+  historySignalsSnapshot?: ReviewHistorySignal[];
 }
 
 export default function DraftReviewPanel({
@@ -36,6 +44,11 @@ export default function DraftReviewPanel({
   isLoading = false,
   warning,
   disabled = false,
+  readOnly = false,
+  showContinue = true,
+  revisedDraftExists = false,
+  verdictSnapshot,
+  historySignalsSnapshot,
 }: DraftReviewPanelProps) {
   return (
     <section
@@ -50,8 +63,9 @@ export default function DraftReviewPanel({
           초안 검토
         </h2>
         <p className="mt-1 text-xs leading-relaxed text-ink-muted">
-          교수 검토 의견과 요약을 먼저 확인한 뒤, 필요 시 세부 논리를 펼쳐
-          보세요.
+          {readOnly
+            ? "초안 검토 시점의 교수 검토 의견과 요약입니다."
+            : "교수 검토 의견과 요약을 먼저 확인한 뒤, 필요 시 세부 논리를 펼쳐 보세요."}
         </p>
       </div>
 
@@ -77,11 +91,14 @@ export default function DraftReviewPanel({
               selectedDocuments={selectedDocuments}
               purpose={purpose}
               difficulty={difficulty}
+              verdictSnapshot={verdictSnapshot}
             />
 
             <ReviewHistorySignals
               findings={findings}
               selectedIssues={selectedIssues}
+              revisedDraftExists={revisedDraftExists}
+              signalsSnapshot={historySignalsSnapshot}
             />
 
             <DraftReviewExecutiveSummary findings={findings} />
@@ -95,21 +112,24 @@ export default function DraftReviewPanel({
               </h3>
               <ReviewFindingsList
                 findings={findings}
-                onDecisionChange={onFindingDecision}
+                onDecisionChange={readOnly ? undefined : onFindingDecision}
+                readOnly={readOnly}
                 emptyMessage="검토 제안을 불러오지 못했습니다. 교수 승인 단계에서 체크리스트를 활용해 주세요."
               />
             </div>
 
-            <div className="border-t border-border/80 pt-4">
-              <button
-                type="button"
-                onClick={onContinue}
-                disabled={disabled || isLoading}
-                className="w-full rounded-sm border border-ink/25 bg-ink/5 px-6 py-3 font-serif text-sm font-medium text-ink transition-colors hover:bg-ink/10 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
-              >
-                검토 확인 · 교수 승인으로
-              </button>
-            </div>
+            {showContinue && (
+              <div className="border-t border-border/80 pt-4">
+                <button
+                  type="button"
+                  onClick={onContinue}
+                  disabled={disabled || isLoading}
+                  className="w-full rounded-sm border border-ink/25 bg-ink/5 px-6 py-3 font-serif text-sm font-medium text-ink transition-colors hover:bg-ink/10 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+                >
+                  검토 확인 · 교수 승인으로
+                </button>
+              </div>
+            )}
           </>
         )}
       </div>

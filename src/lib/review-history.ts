@@ -103,6 +103,14 @@ export function buildReviewHistorySignals(
   return records.slice(0, 3).map(buildSignalLines);
 }
 
+export function buildPostRevisionHistoryNote(
+  signals: ReviewHistorySignal[]
+): string | null {
+  const top = signals[0];
+  if (!top) return null;
+  return `이번 수정은 유사 사례에서 반복적으로 지적된 '${top.record.repeatedFinding}' 보완 방향과 연결됩니다.`;
+}
+
 export function getTopReviewHistoryRecord(
   findings: ReviewFinding[],
   selectedIssues: LegalIssue[]

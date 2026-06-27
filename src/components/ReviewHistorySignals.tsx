@@ -2,20 +2,33 @@
 
 import type { LegalIssue, ReviewFinding } from "@/types";
 import { REVIEW_HISTORY_DISCLAIMER } from "@/data/review-history";
-import { buildReviewHistorySignals } from "@/lib/review-history";
+import {
+  buildPostRevisionHistoryNote,
+  buildReviewHistorySignals,
+  type ReviewHistorySignal,
+} from "@/lib/review-history";
 
 interface ReviewHistorySignalsProps {
   findings: ReviewFinding[];
   selectedIssues: LegalIssue[];
+  revisedDraftExists?: boolean;
+  signalsSnapshot?: ReviewHistorySignal[];
 }
 
 export default function ReviewHistorySignals({
   findings,
   selectedIssues,
+  revisedDraftExists = false,
+  signalsSnapshot,
 }: ReviewHistorySignalsProps) {
-  const signals = buildReviewHistorySignals(findings, selectedIssues);
+  const signals =
+    signalsSnapshot ?? buildReviewHistorySignals(findings, selectedIssues);
 
   if (signals.length === 0) return null;
+
+  const postRevisionNote = revisedDraftExists
+    ? buildPostRevisionHistoryNote(signals)
+    : null;
 
   return (
     <div className="rounded-sm border border-border/80 bg-paper-dark/15 px-4 py-3">
@@ -23,6 +36,13 @@ export default function ReviewHistorySignals({
       <p className="mt-0.5 text-[11px] leading-relaxed text-ink-faint">
         유사한 쟁점과 출제 원칙에서 반복적으로 나타난 검수 패턴입니다.
       </p>
+
+      {revisedDraftExists && (
+        <p className="mt-2 text-[11px] leading-relaxed text-ink-muted">
+          수정 초안은 위 검수 이력에서 반복적으로 지적된 보완점을 기준으로 다시
+          검토할 수 있습니다.
+        </p>
+      )}
 
       <ul className="mt-3 space-y-3">
         {signals.map((signal) => (
@@ -50,6 +70,15 @@ export default function ReviewHistorySignals({
           </li>
         ))}
       </ul>
+
+      {postRevisionNote && (
+        <div className="mt-3 border-t border-border/60 pt-3">
+          <p className="text-[11px] font-medium text-ink-faint">수정 후 참고</p>
+          <p className="mt-1 text-[12px] leading-relaxed text-ink-muted">
+            {postRevisionNote}
+          </p>
+        </div>
+      )}
 
       <p className="mt-3 text-[10px] leading-relaxed text-ink-faint">
         {REVIEW_HISTORY_DISCLAIMER}

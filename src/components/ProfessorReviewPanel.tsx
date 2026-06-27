@@ -16,6 +16,7 @@ interface ProfessorReviewPanelProps {
   isRevising: boolean;
   disabled?: boolean;
   error?: string | null;
+  readOnly?: boolean;
 }
 
 export default function ProfessorReviewPanel({
@@ -29,6 +30,7 @@ export default function ProfessorReviewPanel({
   isRevising,
   disabled = false,
   error,
+  readOnly = false,
 }: ProfessorReviewPanelProps) {
   const toggleChecklist = (id: ReviewChecklistId) => {
     if (checklistIds.includes(id)) {
@@ -59,14 +61,17 @@ export default function ProfessorReviewPanel({
           교수 승인
         </h2>
         <p className="mt-1 text-xs leading-relaxed text-ink-muted">
-          검토 제안의 반영 여부를 확정합니다. 승인 시 적용 원칙·수정 방향·충족
-          목표가 수정 초안에 반영됩니다.
+          {readOnly
+            ? "승인 시점의 검토 반영 여부입니다."
+            : "검토 제안의 반영 여부를 확정합니다. 승인 시 적용 원칙·수정 방향·충족 목표가 수정 초안에 반영됩니다."}
         </p>
       </div>
 
       <div className="space-y-6 p-5">
         <p className="text-[13px] leading-relaxed text-ink-muted">
-          아래 검토 의견 중 이번 수정에 반영할 항목을 승인하십시오.
+          {readOnly
+            ? "아래는 수정 초안 작성에 반영하기로 승인한 검토 항목입니다."
+            : "아래 검토 의견 중 이번 수정에 반영할 항목을 승인하십시오."}
         </p>
 
         <ApprovalDecisionSummary findings={findings} />
@@ -75,6 +80,7 @@ export default function ProfessorReviewPanel({
           <ReviewFindingsList
             findings={findings}
             onDecisionChange={onFindingDecision}
+            readOnly={readOnly}
             mode="professor-approval"
             emptyMessage="검토 제안이 없습니다. 체크리스트와 추가 지시로 수정할 수 있습니다."
           />
@@ -85,7 +91,23 @@ export default function ProfessorReviewPanel({
           <div className="grid gap-2 sm:grid-cols-2">
             {reviewChecklistItems.map((item) => {
               const checked = checklistIds.includes(item.id);
-              return (
+              return readOnly ? (
+                <div
+                  key={item.id}
+                  className={`flex items-center gap-2.5 rounded-sm border px-3 py-2 ${
+                    checked
+                      ? "border-ink/30 bg-ink/5"
+                      : "border-border bg-paper-dark/10 opacity-60"
+                  }`}
+                >
+                  <span
+                    className={`h-3.5 w-3.5 rounded-sm border ${
+                      checked ? "border-accent bg-accent" : "border-border"
+                    }`}
+                  />
+                  <span className="text-[13px] text-ink-muted">{item.label}</span>
+                </div>
+              ) : (
                 <label
                   key={item.id}
                   className={`flex cursor-pointer items-center gap-2.5 rounded-sm border px-3 py-2 transition-colors ${
@@ -114,14 +136,20 @@ export default function ProfessorReviewPanel({
           >
             교수님 추가 지시
           </label>
-          <textarea
-            id="professor-instruction"
-            value={professorInstruction}
-            onChange={(e) => onInstructionChange(e.target.value)}
-            placeholder="예: 학생들이 금지착오로 오해할 수 있도록 사실관계를 보강하고, 채점기준을 30점 기준으로 더 세분화해 주세요."
-            rows={4}
-            className="w-full resize-y rounded-sm border border-border bg-paper px-3 py-2 text-sm leading-relaxed text-ink-muted placeholder:text-ink-faint focus:border-border-dark focus:outline-none focus:ring-1 focus:ring-border-dark"
-          />
+          {readOnly ? (
+            <p className="rounded-sm border border-border bg-paper-dark/15 px-3 py-2 text-sm leading-relaxed text-ink-muted">
+              {professorInstruction.trim() || "교수님 추가 지시 없음"}
+            </p>
+          ) : (
+            <textarea
+              id="professor-instruction"
+              value={professorInstruction}
+              onChange={(e) => onInstructionChange(e.target.value)}
+              placeholder="예: 학생들이 금지착오로 오해할 수 있도록 사실관계를 보강하고, 채점기준을 30점 기준으로 더 세분화해 주세요."
+              rows={4}
+              className="w-full resize-y rounded-sm border border-border bg-paper px-3 py-2 text-sm leading-relaxed text-ink-muted placeholder:text-ink-faint focus:border-border-dark focus:outline-none focus:ring-1 focus:ring-border-dark"
+            />
+          )}
         </div>
 
         {error && (
@@ -130,24 +158,26 @@ export default function ProfessorReviewPanel({
           </div>
         )}
 
-        <div className="border-t border-border/80 pt-4">
-          <button
-            type="button"
-            onClick={onRevise}
-            disabled={!canRevise}
-            className="w-full rounded-sm border border-accent bg-accent px-6 py-3 font-serif text-sm font-medium text-paper transition-colors hover:bg-accent-light disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
-          >
-            {isRevising
-              ? "수정 초안 작성 중…"
-              : "승인한 검토 내용으로 수정 초안 작성"}
-          </button>
-          {!canRevise && !isRevising && (
-            <p className="mt-2 text-xs text-ink-faint">
-              반영할 검토 제안, 체크리스트, 또는 추가 지시 중 하나 이상을
-              지정해 주세요.
-            </p>
-          )}
-        </div>
+        {!readOnly && (
+          <div className="border-t border-border/80 pt-4">
+            <button
+              type="button"
+              onClick={onRevise}
+              disabled={!canRevise}
+              className="w-full rounded-sm border border-accent bg-accent px-6 py-3 font-serif text-sm font-medium text-paper transition-colors hover:bg-accent-light disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+            >
+              {isRevising
+                ? "수정 초안 작성 중…"
+                : "승인한 검토 내용으로 수정 초안 작성"}
+            </button>
+            {!canRevise && !isRevising && (
+              <p className="mt-2 text-xs text-ink-faint">
+                반영할 검토 제안, 체크리스트, 또는 추가 지시 중 하나 이상을
+                지정해 주세요.
+              </p>
+            )}
+          </div>
+        )}
       </div>
     </section>
   );

@@ -7,7 +7,7 @@ import type {
   LegalIssue,
   ReviewFinding,
 } from "@/types";
-import { buildProfessorVerdict } from "@/lib/professor-verdict";
+import { buildProfessorVerdict, type ProfessorVerdictResult } from "@/lib/professor-verdict";
 
 interface ProfessorVerdictProps {
   findings: ReviewFinding[];
@@ -15,6 +15,7 @@ interface ProfessorVerdictProps {
   selectedDocuments: KnowledgeDocument[];
   purpose: GenerationPurpose;
   difficulty: GenerationDifficulty;
+  verdictSnapshot?: ProfessorVerdictResult | null;
 }
 
 const statusStyles = {
@@ -29,14 +30,17 @@ export default function ProfessorVerdict({
   selectedDocuments,
   purpose,
   difficulty,
+  verdictSnapshot,
 }: ProfessorVerdictProps) {
-  const verdict = buildProfessorVerdict(
-    findings,
-    selectedIssues,
-    selectedDocuments,
-    purpose,
-    difficulty
-  );
+  const verdict =
+    verdictSnapshot ??
+    buildProfessorVerdict(
+      findings,
+      selectedIssues,
+      selectedDocuments,
+      purpose,
+      difficulty
+    );
 
   if (verdict.empty) {
     return (

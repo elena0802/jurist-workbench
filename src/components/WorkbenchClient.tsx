@@ -35,8 +35,17 @@ import DraftComposeButton from "@/components/DraftComposeButton";
 import DraftOutput from "@/components/DraftOutput";
 import DraftReviewPanel from "@/components/DraftReviewPanel";
 import ProfessorReviewPanel from "@/components/ProfessorReviewPanel";
+import ProfessorReviewRecord from "@/components/ProfessorReviewRecord";
 import RevisionSummaryPanel from "@/components/RevisionSummaryPanel";
 import CurrentDraft from "@/components/CurrentDraft";
+import {
+  buildProfessorVerdict,
+  type ProfessorVerdictResult,
+} from "@/lib/professor-verdict";
+import {
+  buildReviewHistorySignals,
+  type ReviewHistorySignal,
+} from "@/lib/review-history";
 
 const defaultOptions: GenerationOptions = {
   purpose: "모의시험",
@@ -48,6 +57,11 @@ const defaultOptions: GenerationOptions = {
     gradingCriteria: true,
     professorReviewMemo: true,
   },
+};
+
+type ReviewRecordSnapshot = {
+  verdict: ProfessorVerdictResult;
+  historySignals: ReviewHistorySignal[];
 };
 
 export default function WorkbenchClient() {
@@ -70,6 +84,8 @@ export default function WorkbenchClient() {
   const [reviewConfirmed, setReviewConfirmed] = useState(false);
   const [checklistIds, setChecklistIds] = useState<ReviewChecklistId[]>([]);
   const [professorInstruction, setProfessorInstruction] = useState("");
+  const [reviewRecordSnapshot, setReviewRecordSnapshot] =
+    useState<ReviewRecordSnapshot | null>(null);
 
   const canCompose =
     selectedDocumentIds.length > 0 && selectedIssueIds.length > 0;
@@ -144,6 +160,7 @@ export default function WorkbenchClient() {
     setRevisionError(null);
     setRevisionSummary(null);
     setRevisedDraft(null);
+    setReviewRecordSnapshot(null);
   };
 
   const fetchReview = useCallback(
@@ -285,6 +302,20 @@ export default function WorkbenchClient() {
     setRevisionSummary(null);
     setRevisedDraft(null);
 
+    setReviewRecordSnapshot({
+      verdict: buildProfessorVerdict(
+        reviewFindings,
+        selectedIssues,
+        selectedDocuments,
+        options.purpose,
+        options.difficulty
+      ),
+      historySignals: buildReviewHistorySignals(
+        reviewFindings,
+        selectedIssues
+      ),
+    });
+
     const approvedFindings = reviewFindings
       .filter((f) => f.decision === "accept")
       .map(toRevisionFindingPayload);
@@ -357,6 +388,28 @@ export default function WorkbenchClient() {
       setIsRevising(false);
     }
   };
+
+  const persistedVerdict = useMemo(
+    () =>
+      reviewRecordSnapshot?.verdict ??
+      (reviewFindings.length > 0
+        ? buildProfessorVerdict(
+            reviewFindings,
+            selectedIssues,
+            selectedDocuments,
+            options.purpose,
+            options.difficulty
+          )
+        : null),
+    [
+      reviewRecordSnapshot?.verdict,
+      reviewFindings,
+      selectedIssues,
+      selectedDocuments,
+      options.purpose,
+      options.difficulty,
+    ]
+  );
 
   const fallbackApplied = useMemo(
     () =>
@@ -441,7 +494,7 @@ export default function WorkbenchClient() {
               }
             />
 
-            {hasDraftV1 && !reviewConfirmed && (
+            {hasDraftV1 && (isReviewing || reviewFindings.length > 0) && (
               <DraftReviewPanel
                 findings={reviewFindings}
                 selectedIssues={selectedIssues}
@@ -452,10 +505,15 @@ export default function WorkbenchClient() {
                 onContinue={() => setReviewConfirmed(true)}
                 isLoading={isReviewing}
                 warning={reviewWarning}
+                readOnly={reviewConfirmed}
+                showContinue={!reviewConfirmed}
+                revisedDraftExists={hasRevisedDraft}
+                verdictSnapshot={reviewRecordSnapshot?.verdict}
+                historySignalsSnapshot={reviewRecordSnapshot?.historySignals}
               />
             )}
 
-            {hasDraftV1 && reviewConfirmed && !hasRevisedDraft && (
+            {hasDraftV1 && reviewConfirmed && (
               <ProfessorReviewPanel
                 findings={reviewFindings}
                 onFindingDecision={handleFindingDecision}
@@ -466,15 +524,12 @@ export default function WorkbenchClient() {
                 onRevise={handleRevise}
                 isRevising={isRevising}
                 error={revisionError}
+                readOnly={hasRevisedDraft}
               />
             )}
 
-            {hasRevisedDraft && (
+            {hasRevisedDraft && revisedDraft && persistedVerdict && (
               <>
-                <RevisionSummaryPanel
-                  summary={revisionSummary}
-                  fallbackApplied={fallbackApplied}
-                />
                 <DraftOutput
                   result={revisedDraft}
                   error={null}
@@ -483,6 +538,16 @@ export default function WorkbenchClient() {
                   statusBadge="수정 초안 작성 완료"
                   showReviewSection
                   footerNote="최종 검수 전 초안입니다."
+                />
+                <ProfessorReviewRecord
+                  verdict={persistedVerdict}
+                  findings={reviewFindings}
+                  revisionSummary={revisionSummary}
+                  revisedDraft={revisedDraft}
+                />
+                <RevisionSummaryPanel
+                  summary={revisionSummary}
+                  fallbackApplied={fallbackApplied}
                 />
               </>
             )}
