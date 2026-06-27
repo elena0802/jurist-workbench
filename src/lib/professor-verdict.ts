@@ -13,6 +13,10 @@ import {
   sortFindingsByImportance,
   summarizeFindingPriorities,
 } from "@/lib/finding-priority";
+import {
+  buildHistoryReferenceSentence,
+  getTopReviewHistoryRecord,
+} from "@/lib/review-history";
 
 export type VerdictStatus = "needs_revision" | "mostly_appropriate" | "needs_re_review";
 
@@ -145,38 +149,84 @@ export function getPrimaryRules(
   return rules;
 }
 
-function issueSelectionPhrase(
-  findings: ReviewFinding[],
+function formatPositiveEvaluation(
   selectedIssues: LegalIssue[],
   purpose: GenerationPurpose,
   difficulty: GenerationDifficulty
 ): string {
-  const issueFinding = findings.find((f) => f.category === "쟁점");
-  const names = selectedIssues.map((i) => i.name);
+  const names = selectedIssues.map((issue) => issue.name);
 
-  if (issueFinding) {
-    const severity = issueFinding.severity ?? "medium";
-    if (severity === "high" || getFindingPriority(issueFinding).priority === "required") {
-      return "쟁점 선정은 방향은 맞으나 구성상 보완이 필요하나";
-    }
-    return "쟁점 선정은 대체로 적절하나";
+  if (names.length === 0) {
+    return `${purpose}(${difficulty}) 목적에 맞는 출제 골격을 갖추고 있어, 쟁점 설계는 전반적으로 적절합니다`;
   }
 
-  if (names.length > 0) {
-    const label =
-      names.length <= 3
-        ? names.join("·")
-        : `${names.slice(0, 2).join("·")} 등 ${names.length}개 쟁점`;
-    return `${purpose}(${difficulty}) 목적에 맞게 ${label}을 선정하였으나`;
+  if (names.length === 1) {
+    return `${names[0]} 쟁점을 중심으로 한 출제 설계는 적절합니다`;
   }
 
-  return "초안의 전반적 골격은 유지할 만하나";
+  if (names.length === 2) {
+    return `${names[0]}와 ${names[1]}를 함께 평가하려는 쟁점 설계는 적절합니다`;
+  }
+
+  return `${names.slice(0, 2).join("·")} 등 ${names.length}개 쟁점을 연계한 출제 설계는 적절합니다`;
+}
+
+function formatCoreWeakness(
+  finding: ReviewFinding,
+  rule: AppliedRule | null
+): string {
+  const diagnosis = trimSentence(
+    rule?.draftDiagnosis || finding.finding || "핵심 보완 지점이 확인됩니다"
+  );
+
+  if (finding.category === "사실관계") {
+    return `다만 현재 사실관계만으로는 ${diagnosis}습니다`;
+  }
+
+  if (finding.category === "쟁점") {
+    return `다만 현재 초안은 ${diagnosis}습니다`;
+  }
+
+  return `다만 ${diagnosis}습니다`;
+}
+
+function formatRevisionDirection(
+  finding: ReviewFinding,
+  rule: AppliedRule | null
+): string {
+  const action = trimSentence(
+    finding.suggestedAction ||
+      rule?.revisionGuidance ||
+      "해당 영역을 우선 보완"
+  );
+
+  if (/^(우선|먼저)/.test(action)) {
+    return ensureEnding(action, "는 것이 필요합니다");
+  }
+
+  return `우선 보완할 부분은 ${ensureEnding(action, "하는 것")}입니다`;
+}
+
+function formatExpectedEffect(
+  finding: ReviewFinding,
+  rule: AppliedRule | null
+): string {
+  const effect = trimSentence(
+    rule?.expectedImprovement ||
+      finding.expectedEffect ||
+      "출제·평가 구조를 더 명확히 할 수 있습니다"
+  );
+
+  if (/^(이 보완|보완)/.test(effect)) {
+    return ensureEnding(effect, "습니다");
+  }
+
+  return `이 보완이 이루어지면 ${ensureEnding(effect, "습니다")}`;
 }
 
 function buildJudgmentParagraph(
   findings: ReviewFinding[],
   selectedIssues: LegalIssue[],
-  selectedDocuments: KnowledgeDocument[],
   purpose: GenerationPurpose,
   difficulty: GenerationDifficulty
 ): string {
@@ -184,54 +234,37 @@ function buildJudgmentParagraph(
   const rule = enrichedRule(finding);
   const { statusLabel } = getVerdictStatus(findings);
 
-  const opener = issueSelectionPhrase(
-    findings,
-    selectedIssues,
-    purpose,
-    difficulty
-  );
+  const positive = formatPositiveEvaluation(selectedIssues, purpose, difficulty);
+  const weakness =
+    statusLabel === "대체로 적절"
+      ? `다만 ${trimSentence(rule?.draftDiagnosis || finding.finding || "세부 표현")}는 한 번 더 점검할 만합니다`
+      : formatCoreWeakness(finding, rule);
 
-  const weakness = trimSentence(
-    rule?.draftDiagnosis || finding.finding || "핵심 보완 지점이 확인됩니다"
-  );
+  const direction =
+    statusLabel === "대체로 적절"
+      ? `우선 ${trimSentence(finding.suggestedAction || rule?.revisionGuidance || "표현을 다듬")}을 검토할 수 있습니다`
+      : formatRevisionDirection(finding, rule);
 
-  const rationale = trimSentence(
-    rule?.violationReason ||
-      finding.recommendedReason ||
-      "수험생이 법적 판단 구조를 단계적으로 전개하기 어렵습니다"
-  );
+  const effect =
+    statusLabel === "대체로 적절"
+      ? formatExpectedEffect(finding, rule).replace(
+          "이 보완이 이루어지면",
+          "이를 반영하면"
+        )
+      : formatExpectedEffect(finding, rule);
 
-  const action = trimSentence(
-    finding.suggestedAction ||
-      rule?.revisionGuidance ||
-      "우선 해당 영역을 보완"
-  );
+  const historyRecord = getTopReviewHistoryRecord(findings, selectedIssues);
+  const historySentence = historyRecord
+    ? ` ${buildHistoryReferenceSentence(historyRecord)}`
+    : "";
 
-  const effect = trimSentence(
-    rule?.expectedImprovement ||
-      finding.expectedEffect ||
-      "출제·평가 구조를 더 명확히 할 수 있습니다"
-  );
-
-  const docHint =
-    finding.category === "사실관계" && selectedDocuments.length > 0
-      ? ` 참고 자료(${selectedDocuments
-          .slice(0, 2)
-          .map((d) => d.title)
-          .join(", ")})를 반영하면 보완 방향을 구체화할 수 있습니다.`
-      : "";
-
-  if (statusLabel === "대체로 적절") {
-    return `${opener.replace(/하나$/, "하나,")} ${weakness}는 점검할 만합니다. ${action}을 검토하면 ${effect}습니다.${docHint}`;
-  }
-
-  return `${opener} 현재 초안은 ${weakness}습니다. ${rationale}하므로, 우선 ${action}하는 것이 필요합니다. 이 보완이 이루어지면 ${effect}습니다.${docHint}`;
+  return `${positive}. ${weakness}. ${direction}. ${effect}.${historySentence}`;
 }
 
 export function buildProfessorVerdict(
   findings: ReviewFinding[],
   selectedIssues: LegalIssue[],
-  selectedDocuments: KnowledgeDocument[],
+  _selectedDocuments: KnowledgeDocument[],
   purpose: GenerationPurpose,
   difficulty: GenerationDifficulty
 ): ProfessorVerdictResult {
@@ -255,7 +288,6 @@ export function buildProfessorVerdict(
     judgment: buildJudgmentParagraph(
       findings,
       selectedIssues,
-      selectedDocuments,
       purpose,
       difficulty
     ),

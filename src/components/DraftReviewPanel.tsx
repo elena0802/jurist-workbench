@@ -8,6 +8,7 @@ import type {
   ReviewFinding,
 } from "@/types";
 import ProfessorVerdict from "@/components/ProfessorVerdict";
+import ReviewHistorySignals from "@/components/ReviewHistorySignals";
 import DraftReviewExecutiveSummary from "@/components/DraftReviewExecutiveSummary";
 import ReviewFindingsList from "@/components/ReviewFindingsList";
 
@@ -76,6 +77,11 @@ export default function DraftReviewPanel({
               selectedDocuments={selectedDocuments}
               purpose={purpose}
               difficulty={difficulty}
+            />
+
+            <ReviewHistorySignals
+              findings={findings}
+              selectedIssues={selectedIssues}
             />
 
             <DraftReviewExecutiveSummary findings={findings} />
