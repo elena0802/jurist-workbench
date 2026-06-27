@@ -75,7 +75,6 @@ export default function ProfessorReviewPanel({
             findings={findings}
             onDecisionChange={onFindingDecision}
             mode="professor-approval"
-            showEvidence={false}
             emptyMessage="검토 제안이 없습니다. 체크리스트와 추가 지시로 수정할 수 있습니다."
           />
         </div>

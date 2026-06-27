@@ -9,15 +9,16 @@ import type {
 } from "@/types";
 import { getExamRuleById } from "@/data/exam-rules";
 import { fillAppliedRuleReasoning } from "@/lib/rule-matching";
+import {
+  getFindingPriority,
+  priorityStyles,
+} from "@/lib/finding-priority";
 
 interface ReviewFindingsListProps {
   findings: ReviewFinding[];
   onDecisionChange?: (id: string, decision: FindingDecision) => void;
   readOnly?: boolean;
   emptyMessage?: string;
-  showEvidence?: boolean;
-  showAppliedRules?: boolean;
-  expandFirstEvidence?: boolean;
   mode?: "draft-review" | "professor-approval";
 }
 
@@ -39,236 +40,240 @@ const ruleStatusStyles: Record<RuleStatus, string> = {
   violated: "border-accent/45 bg-accent/15 text-accent",
 };
 
-function safeRule(rule: AppliedRule, finding: ReviewFinding): AppliedRule {
-  return fillAppliedRuleReasoning(
-    rule,
-    getExamRuleById(rule.ruleId),
-    finding,
-    []
+function safeRules(finding: ReviewFinding): AppliedRule[] {
+  const rules = finding.appliedRules ?? [];
+  if (rules.length > 0) {
+    return rules.map((rule) =>
+      fillAppliedRuleReasoning(rule, getExamRuleById(rule.ruleId), finding, [])
+    );
+  }
+  return [
+    fillAppliedRuleReasoning(
+      {
+        ruleId: "—",
+        title: "등록되지 않은 원칙",
+        category: "구성",
+        status: "partial",
+        statusLabel: "부분 충족",
+        explanation: "적용 원칙 정보를 불러오지 못했습니다.",
+        diagnosticQuestion: "",
+        draftDiagnosis: "",
+        violationReason: "",
+        revisionGuidance: finding.suggestedAction,
+        satisfactionTarget: "",
+        expectedImprovement: finding.expectedEffect,
+      },
+      undefined,
+      finding,
+      []
+    ),
+  ];
+}
+
+function primaryRule(finding: ReviewFinding): AppliedRule {
+  return safeRules(finding)[0]!;
+}
+
+function DecisionButtons({
+  finding,
+  onDecisionChange,
+}: {
+  finding: ReviewFinding;
+  onDecisionChange: (id: string, decision: FindingDecision) => void;
+}) {
+  const isAccept = finding.decision === "accept";
+  const isIgnore = finding.decision === "ignore";
+
+  return (
+    <div className="mt-2 flex gap-2">
+      <button
+        type="button"
+        onClick={() => onDecisionChange(finding.id, "accept")}
+        className={`rounded-sm border px-2 py-0.5 text-[11px] transition-colors ${
+          isAccept
+            ? "border-accent bg-accent text-paper"
+            : "border-border text-ink-muted hover:border-accent/40"
+        }`}
+      >
+        반영
+      </button>
+      <button
+        type="button"
+        onClick={() => onDecisionChange(finding.id, "ignore")}
+        className={`rounded-sm border px-2 py-0.5 text-[11px] transition-colors ${
+          isIgnore
+            ? "border-ink/30 bg-ink/10 text-ink"
+            : "border-border text-ink-muted hover:border-border-dark"
+        }`}
+      >
+        무시
+      </button>
+    </div>
   );
 }
 
-function RuleReasoningCard({
-  rule,
-  defaultOpenDetails,
-  compact,
+function ReasoningDetails({
+  rules,
+  defaultOpen,
 }: {
-  rule: AppliedRule;
-  defaultOpenDetails: boolean;
-  compact: boolean;
+  rules: AppliedRule[];
+  defaultOpen: boolean;
 }) {
   return (
+    <details
+      className="mt-2 rounded-sm border border-border/70 bg-paper-dark/15"
+      open={defaultOpen}
+    >
+      <summary className="cursor-pointer px-2.5 py-1.5 text-[11px] font-medium text-ink-muted hover:bg-highlight/40">
+        검토 논리 보기
+      </summary>
+      <div className="space-y-2 border-t border-border/60 px-2.5 py-2">
+        {rules.map((rule, index) => (
+          <div
+            key={`${rule.ruleId}-${index}`}
+            className="text-[10px] leading-relaxed text-ink-muted"
+          >
+            {rules.length > 1 && (
+              <p className="mb-1 font-mono text-[9px] text-ink-faint">
+                {rule.ruleId}
+              </p>
+            )}
+            <div className="space-y-1">
+              <div>
+                <span className="font-medium text-ink-faint">현재 초안 진단 · </span>
+                {rule.draftDiagnosis}
+              </div>
+              <div>
+                <span className="font-medium text-ink-faint">수정 방향 · </span>
+                {rule.revisionGuidance}
+              </div>
+              <div>
+                <span className="font-medium text-ink-faint">기대 효과 · </span>
+                {rule.expectedImprovement}
+              </div>
+              <div>
+                <span className="font-medium text-ink-faint">원칙 충족 방안 · </span>
+                {rule.satisfactionTarget}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </details>
+  );
+}
+
+function DraftReviewCard({
+  finding,
+  defaultOpenReasoning,
+  onDecisionChange,
+}: {
+  finding: ReviewFinding;
+  defaultOpenReasoning: boolean;
+  onDecisionChange?: (id: string, decision: FindingDecision) => void;
+}) {
+  const isAccept = finding.decision === "accept";
+  const isIgnore = finding.decision === "ignore";
+  const severity = finding.severity ?? "medium";
+  const { label: priorityLabel, priority } = getFindingPriority(finding);
+  const rule = primaryRule(finding);
+  const allRules = safeRules(finding);
+
+  return (
     <li
-      className={`rounded-sm border border-border/60 bg-paper/85 ${
-        compact ? "px-2 py-1.5" : "px-2.5 py-2"
+      className={`rounded-sm border px-3 py-2.5 ${
+        isAccept
+          ? "border-accent/35 bg-accent/[0.05]"
+          : isIgnore
+            ? "border-border bg-paper-dark/20 opacity-70"
+            : "border-border bg-paper"
       }`}
     >
-      <div className="mb-1.5">
-        <p className="text-[10px] font-semibold tracking-[0.05em] text-ink-faint">
-          출제 원칙
-        </p>
-        <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
-          <span className="font-mono text-[10px] font-medium text-ink-muted">
-            {rule.ruleId}
-          </span>
-          <span
-            className={`rounded-sm border px-1.5 py-px text-[10px] font-semibold ${ruleStatusStyles[rule.status]}`}
-          >
-            {rule.statusLabel}
-          </span>
-        </div>
-        <p
-          className={`mt-0.5 font-medium leading-snug text-ink ${
-            compact ? "text-[10px]" : "text-[11px]"
-          }`}
+      <div className="flex flex-wrap items-center gap-1.5">
+        <span className="rounded-sm border border-ink/15 bg-ink/5 px-1.5 py-px text-[10px] font-medium text-ink-muted">
+          {finding.category}
+        </span>
+        <span
+          className={`rounded-sm border px-1.5 py-px text-[10px] font-medium ${severityStyles[severity]}`}
         >
-          {rule.title}
+          {severityLabels[severity]}
+        </span>
+        <span
+          className={`rounded-sm border px-1.5 py-px text-[10px] font-medium ${priorityStyles[priority]}`}
+        >
+          {priorityLabel}
+        </span>
+      </div>
+
+      <p className="mt-1.5 text-[13px] leading-snug text-ink">{finding.finding}</p>
+
+      <div className="mt-1.5 flex flex-wrap items-start gap-1.5 text-[11px]">
+        <span className="font-mono text-ink-faint">{rule.ruleId}</span>
+        <span className="text-ink-muted">{rule.title}</span>
+        <span
+          className={`rounded-sm border px-1.5 py-px text-[10px] font-semibold ${ruleStatusStyles[rule.status]}`}
+        >
+          {rule.statusLabel}
+        </span>
+      </div>
+
+      {finding.suggestedAction && (
+        <p className="mt-1.5 text-[11px] leading-relaxed text-ink-muted">
+          <span className="text-ink-faint">제안 조치 · </span>
+          {finding.suggestedAction}
         </p>
-      </div>
+      )}
 
-      <div className="space-y-1.5 text-[10px] leading-relaxed">
-        <div>
-          <p className="font-medium text-ink-faint">현재 초안 진단</p>
-          <p className="text-ink-muted">{rule.draftDiagnosis}</p>
-        </div>
-        <div>
-          <p className="font-medium text-ink-faint">수정 방향</p>
-          <p className="text-ink-muted">{rule.revisionGuidance}</p>
-        </div>
-        <div>
-          <p className="font-medium text-ink-faint">기대 효과</p>
-          <p className="text-ink-muted">{rule.expectedImprovement}</p>
-        </div>
-      </div>
+      <ReasoningDetails rules={allRules} defaultOpen={defaultOpenReasoning} />
 
-      <details
-        className="mt-1.5 rounded-sm border border-border/50 bg-paper-dark/20"
-        open={defaultOpenDetails}
-      >
-        <summary className="cursor-pointer px-2 py-1 text-[10px] text-ink-faint hover:text-ink-muted">
-          상세 검토 논리
-        </summary>
-        <div className="space-y-1.5 border-t border-border/40 px-2 py-1.5 text-[10px] leading-relaxed">
-          <div>
-            <p className="font-medium text-ink-faint">점검 질문</p>
-            <p className="text-ink-muted">{rule.diagnosticQuestion}</p>
-          </div>
-          <div>
-            <p className="font-medium text-ink-faint">미충족 사유</p>
-            <p className="text-ink-muted">{rule.violationReason}</p>
-          </div>
-          <div>
-            <p className="font-medium text-ink-faint">원칙 충족 방안</p>
-            <p className="text-ink-muted">{rule.satisfactionTarget}</p>
-          </div>
-          <div>
-            <p className="font-medium text-ink-faint">검토 요약</p>
-            <p className="text-ink-muted">{rule.explanation}</p>
-          </div>
-        </div>
-      </details>
+      {onDecisionChange && (
+        <DecisionButtons finding={finding} onDecisionChange={onDecisionChange} />
+      )}
     </li>
   );
 }
 
-function RuleReasoningBlock({
-  rules,
+function ApprovalCompactCard({
   finding,
-  compact = false,
-  expandFirstRule = false,
+  onDecisionChange,
 }: {
-  rules: AppliedRule[];
   finding: ReviewFinding;
-  compact?: boolean;
-  expandFirstRule?: boolean;
+  onDecisionChange: (id: string, decision: FindingDecision) => void;
 }) {
-  const safeRules =
-    rules.length > 0
-      ? rules.map((r) => safeRule(r, finding))
-      : [
-          safeRule(
-            {
-              ruleId: "—",
-              title: "등록되지 않은 원칙",
-              category: "구성",
-              status: "partial",
-              statusLabel: "부분 충족",
-              explanation: "적용 원칙 정보를 불러오지 못했습니다.",
-              diagnosticQuestion: "점검 질문을 확인할 수 없습니다.",
-              draftDiagnosis: "현재 초안 진단을 확인할 수 없습니다.",
-              violationReason: "미충족 사유를 확인할 수 없습니다.",
-              revisionGuidance: finding.suggestedAction || "수정 방향을 확인할 수 없습니다.",
-              satisfactionTarget: "원칙 충족 방안을 확인할 수 없습니다.",
-              expectedImprovement:
-                finding.expectedEffect || "기대 효과를 확인할 수 없습니다.",
-            },
-            finding
-          ),
-        ];
+  const isAccept = finding.decision === "accept";
+  const isIgnore = finding.decision === "ignore";
+  const { label: priorityLabel, priority } = getFindingPriority(finding);
+  const rule = primaryRule(finding);
 
   return (
-    <div
-      className={`mt-2.5 rounded-sm border border-ink/20 bg-highlight/40 ${
-        compact ? "px-2 py-1.5" : "px-2.5 py-2"
+    <li
+      className={`rounded-sm border px-3 py-2 ${
+        isAccept
+          ? "border-accent/35 bg-accent/[0.05]"
+          : isIgnore
+            ? "border-border bg-paper-dark/20 opacity-70"
+            : "border-border bg-paper"
       }`}
     >
-      <p className="text-[10px] font-semibold tracking-[0.06em] text-ink-faint">
-        검토 논리
-      </p>
-      <ul className={`space-y-2 ${compact ? "mt-1" : "mt-1.5"}`}>
-        {safeRules.map((rule, ruleIndex) => (
-          <RuleReasoningCard
-            key={`${rule.ruleId}-${ruleIndex}`}
-            rule={rule}
-            compact={compact}
-            defaultOpenDetails={expandFirstRule && ruleIndex === 0}
-          />
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-function ApprovalReasoningNote({ finding }: { finding: ReviewFinding }) {
-  if (finding.decision !== "accept") return null;
-
-  const acceptedRules = (finding.appliedRules ?? []).map((rule) =>
-    safeRule(rule, finding)
-  );
-
-  if (acceptedRules.length === 0) return null;
-
-  return (
-    <div className="mt-2.5 rounded-sm border border-accent/25 bg-accent/[0.04] px-2.5 py-2">
-      <p className="text-[10px] font-semibold text-accent">교수 승인 검토 논리</p>
-      <ul className="mt-1 space-y-1.5">
-        {acceptedRules.map((rule) => (
-          <li key={rule.ruleId} className="text-[10px] leading-relaxed text-ink-muted">
-            <span className="font-mono text-ink-faint">{rule.ruleId}</span>
-            <span className="mx-1">·</span>
-            <span className="text-ink-muted">{rule.revisionGuidance}</span>
-            <span className="mt-0.5 block text-ink-faint">
-              충족 목표: {rule.satisfactionTarget}
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <div className="mb-1 flex flex-wrap items-center gap-1.5">
+            <span
+              className={`rounded-sm border px-1.5 py-px text-[10px] font-medium ${priorityStyles[priority]}`}
+            >
+              {priorityLabel}
             </span>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-function FindingReviewBasis({
-  finding,
-  defaultOpen,
-}: {
-  finding: ReviewFinding;
-  defaultOpen: boolean;
-}) {
-  const evidenceText =
-    finding.evidenceText?.trim() || "자료 근거를 확인할 수 없습니다.";
-  const recommendedReason =
-    finding.recommendedReason?.trim() || "반영 이유를 확인할 수 없습니다.";
-  const expectedEffect =
-    finding.expectedEffect?.trim() || "예상 효과를 확인할 수 없습니다.";
-  const reasoningBasis =
-    finding.reasoningBasis?.trim() ||
-    "출제 원칙 검토 근거를 확인할 수 없습니다.";
-
-  return (
-    <details
-      className="mt-2.5 rounded-sm border border-border/80 bg-paper/60"
-      open={defaultOpen}
-    >
-      <summary className="cursor-pointer px-2.5 py-1.5 text-[11px] font-medium text-ink-muted hover:bg-highlight/40">
-        검토 근거
-      </summary>
-      <div className="space-y-2 border-t border-border/60 px-2.5 py-2 text-[11px] leading-relaxed">
-        {finding.evidenceDocuments.length > 0 && (
-          <div>
-            <p className="font-medium text-ink-faint">관련 자료</p>
-            <p className="mt-0.5 text-ink-muted">
-              {finding.evidenceDocuments.join(" · ")}
-            </p>
+            <span className="font-mono text-[10px] text-ink-faint">
+              {rule.ruleId}
+            </span>
           </div>
-        )}
-        <div>
-          <p className="font-medium text-ink-faint">자료 근거</p>
-          <p className="mt-0.5 text-ink-muted">{evidenceText}</p>
+          <p className="text-[12px] leading-snug text-ink line-clamp-2">
+            {finding.finding}
+          </p>
         </div>
-        <div>
-          <p className="font-medium text-ink-faint">출제 원칙</p>
-          <p className="mt-0.5 text-ink-muted">{reasoningBasis}</p>
-        </div>
-        <div>
-          <p className="font-medium text-ink-faint">반영 이유</p>
-          <p className="mt-0.5 text-ink-muted">{recommendedReason}</p>
-        </div>
-        <div>
-          <p className="font-medium text-ink-faint">예상 효과</p>
-          <p className="mt-0.5 text-ink-muted">{expectedEffect}</p>
-        </div>
+        <DecisionButtons finding={finding} onDecisionChange={onDecisionChange} />
       </div>
-    </details>
+    </li>
   );
 }
 
@@ -277,9 +282,6 @@ export default function ReviewFindingsList({
   onDecisionChange,
   readOnly = false,
   emptyMessage = "표시할 검토 제안이 없습니다.",
-  showEvidence = true,
-  showAppliedRules = true,
-  expandFirstEvidence = false,
   mode = "draft-review",
 }: ReviewFindingsListProps) {
   if (!findings.length) {
@@ -292,88 +294,22 @@ export default function ReviewFindingsList({
 
   return (
     <ul className="space-y-2">
-      {findings.map((finding, index) => {
-        const isAccept = finding.decision === "accept";
-        const isIgnore = finding.decision === "ignore";
-        const severity = finding.severity ?? "medium";
-        const isFirst = index === 0;
-
-        return (
-          <li
+      {findings.map((finding, index) =>
+        mode === "professor-approval" ? (
+          <ApprovalCompactCard
             key={finding.id}
-            className={`rounded-sm border px-3 py-3 ${
-              isAccept
-                ? "border-accent/35 bg-accent/[0.05]"
-                : isIgnore
-                  ? "border-border bg-paper-dark/20 opacity-70"
-                  : "border-border bg-paper"
-            }`}
-          >
-            <div className="mb-1.5 flex flex-wrap items-center gap-2">
-              <span className="rounded-sm border border-ink/15 bg-ink/5 px-1.5 py-px text-[10px] font-medium text-ink-muted">
-                {finding.category}
-              </span>
-              <span
-                className={`rounded-sm border px-1.5 py-px text-[10px] font-medium ${severityStyles[severity]}`}
-              >
-                중요도 {severityLabels[severity]}
-              </span>
-            </div>
-            <p className="text-[13px] leading-relaxed text-ink">
-              {finding.finding}
-            </p>
-            {finding.suggestedAction && (
-              <p className="mt-1.5 text-[12px] leading-relaxed text-ink-muted">
-                <span className="text-ink-faint">제안 조치 · </span>
-                {finding.suggestedAction}
-              </p>
-            )}
-            {showAppliedRules && (
-              <RuleReasoningBlock
-                rules={finding.appliedRules ?? []}
-                finding={finding}
-                compact={!isFirst}
-                expandFirstRule={isFirst}
-              />
-            )}
-            {showEvidence && mode === "draft-review" && (
-              <FindingReviewBasis
-                finding={finding}
-                defaultOpen={expandFirstEvidence && isFirst}
-              />
-            )}
-            {!readOnly && onDecisionChange && (
-              <div className="mt-2.5 flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => onDecisionChange(finding.id, "accept")}
-                  className={`rounded-sm border px-2 py-0.5 text-[11px] transition-colors ${
-                    isAccept
-                      ? "border-accent bg-accent text-paper"
-                      : "border-border text-ink-muted hover:border-accent/40"
-                  }`}
-                >
-                  반영
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onDecisionChange(finding.id, "ignore")}
-                  className={`rounded-sm border px-2 py-0.5 text-[11px] transition-colors ${
-                    isIgnore
-                      ? "border-ink/30 bg-ink/10 text-ink"
-                      : "border-border text-ink-muted hover:border-border-dark"
-                  }`}
-                >
-                  무시
-                </button>
-              </div>
-            )}
-            {mode === "professor-approval" && (
-              <ApprovalReasoningNote finding={finding} />
-            )}
-          </li>
-        );
-      })}
+            finding={finding}
+            onDecisionChange={onDecisionChange!}
+          />
+        ) : (
+          <DraftReviewCard
+            key={finding.id}
+            finding={finding}
+            defaultOpenReasoning={index === 0}
+            onDecisionChange={readOnly ? undefined : onDecisionChange}
+          />
+        )
+      )}
     </ul>
   );
 }
