@@ -127,7 +127,17 @@ export default function WorkbenchClient() {
               }
             />
 
-            <DraftOutput result={result} error={error} />
+            <DraftOutput
+              result={result}
+              error={error}
+              basis={{
+                documentIds: selectedDocumentIds,
+                issueIds: selectedIssueIds,
+                options,
+              }}
+              onRecompose={handleCompose}
+              isRecomposing={isLoading}
+            />
           </div>
 
           <div className="hidden lg:block">
