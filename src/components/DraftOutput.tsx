@@ -2,19 +2,16 @@
 
 import type { GenerationResult } from "@/types";
 import { resultSectionLabels } from "@/data/generation-options";
+import {
+  getVisibleDraftSections,
+  hasDraftContent,
+  normalizeGenerationResult,
+} from "@/lib/normalize-draft-result";
 
 interface DraftOutputProps {
   result: GenerationResult | null;
   error: string | null;
 }
-
-const sectionOrder: Array<keyof GenerationResult> = [
-  "caseProblem",
-  "examIntent",
-  "issueStructure",
-  "gradingCriteria",
-  "professorReviewMemo",
-];
 
 export default function DraftOutput({ result, error }: DraftOutputProps) {
   if (error) {
@@ -23,7 +20,10 @@ export default function DraftOutput({ result, error }: DraftOutputProps) {
         <h2 className="font-serif text-lg font-semibold text-red-800">
           초안 작성 오류
         </h2>
-        <p className="mt-2 text-sm text-red-700">{error}</p>
+        <p className="mt-2 text-sm leading-relaxed text-red-700">{error}</p>
+        <p className="mt-3 text-xs text-red-600/80">
+          참고 자료와 평가 쟁점을 확인한 뒤 다시 시도해 주세요.
+        </p>
       </section>
     );
   }
@@ -32,7 +32,37 @@ export default function DraftOutput({ result, error }: DraftOutputProps) {
     return null;
   }
 
-  const visibleSections = sectionOrder.filter((key) => result[key]?.trim());
+  let safeResult: GenerationResult;
+  try {
+    safeResult = normalizeGenerationResult(result);
+  } catch {
+    return (
+      <section className="rounded-sm border border-red-200 bg-red-50 p-6">
+        <h2 className="font-serif text-lg font-semibold text-red-800">
+          초안 표시 오류
+        </h2>
+        <p className="mt-2 text-sm text-red-700">
+          초안 데이터를 해석하지 못했습니다. 다시 작성해 주세요.
+        </p>
+      </section>
+    );
+  }
+
+  if (!hasDraftContent(safeResult)) {
+    return (
+      <section className="rounded-sm border border-border bg-paper-dark/40 p-6">
+        <h2 className="font-serif text-lg font-semibold text-ink">
+          출제 초안
+        </h2>
+        <p className="mt-2 text-sm text-ink-muted">
+          작성된 초안 내용이 없습니다. 포함 항목을 확인하고 다시 시도해
+          주세요.
+        </p>
+      </section>
+    );
+  }
+
+  const visibleSections = getVisibleDraftSections(safeResult);
 
   return (
     <section className="academic-shadow rounded-sm border border-border bg-paper">
@@ -49,18 +79,18 @@ export default function DraftOutput({ result, error }: DraftOutputProps) {
       </div>
 
       <div className="divide-y divide-border">
-        {visibleSections.map((key, index) => (
-          <article key={key} className="px-6 py-6">
+        {visibleSections.map((section, index) => (
+          <article key={section.key} className="px-6 py-6">
             <div className="mb-3 flex items-center gap-3">
               <span className="flex h-6 w-6 items-center justify-center border border-border-dark bg-highlight text-xs font-semibold text-ink-muted">
                 {index + 1}
               </span>
               <h3 className="font-serif text-lg font-medium text-ink">
-                {resultSectionLabels[key]}
+                {resultSectionLabels[section.key]}
               </h3>
             </div>
             <div className="whitespace-pre-wrap pl-9 text-sm leading-relaxed text-ink-muted">
-              {result[key]}
+              {section.text}
             </div>
           </article>
         ))}

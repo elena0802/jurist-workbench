@@ -2,33 +2,25 @@ import { NextResponse } from "next/server";
 import OpenAI from "openai";
 import type { GenerationRequest, GenerationResult } from "@/types";
 import { buildGenerationPrompt } from "@/lib/prompt";
+import {
+  applyOutputFilters,
+  hasDraftContent,
+  normalizeGenerationResult,
+  parseDraftResponseContent,
+} from "@/lib/normalize-draft-result";
 
 function getOpenAIClient() {
   return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-}
-
-function parseGenerationResult(content: string): GenerationResult {
-  const jsonMatch = content.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) {
-    throw new Error("AI 응답을 파싱할 수 없습니다.");
-  }
-
-  const parsed = JSON.parse(jsonMatch[0]) as Partial<GenerationResult>;
-
-  return {
-    caseProblem: parsed.caseProblem ?? "",
-    examIntent: parsed.examIntent ?? "",
-    issueStructure: parsed.issueStructure ?? "",
-    gradingCriteria: parsed.gradingCriteria ?? "",
-    professorReviewMemo: parsed.professorReviewMemo ?? "",
-  };
 }
 
 export async function POST(request: Request) {
   try {
     if (!process.env.OPENAI_API_KEY) {
       return NextResponse.json(
-        { error: "OPENAI_API_KEY가 설정되지 않았습니다. .env.local 파일을 확인해 주세요." },
+        {
+          error:
+            "OPENAI_API_KEY가 설정되지 않았습니다. .env.local 파일을 확인해 주세요.",
+        },
         { status: 500 }
       );
     }
@@ -69,26 +61,28 @@ export async function POST(request: Request) {
     const content = completion.choices[0]?.message?.content;
     if (!content) {
       return NextResponse.json(
-        { error: "AI로부터 응답을 받지 못했습니다." },
+        { error: "응답을 받지 못했습니다. 잠시 후 다시 시도해 주세요." },
         { status: 500 }
       );
     }
 
-    const rawResult = parseGenerationResult(content);
+    const rawResult = parseDraftResponseContent(content);
+    const normalized = normalizeGenerationResult(rawResult);
 
-    const result: GenerationResult = {
-      caseProblem: body.options.outputs.caseProblem ? rawResult.caseProblem : "",
-      examIntent: body.options.outputs.examIntent ? rawResult.examIntent : "",
-      issueStructure: body.options.outputs.issueStructure
-        ? rawResult.issueStructure
-        : "",
-      gradingCriteria: body.options.outputs.gradingCriteria
-        ? rawResult.gradingCriteria
-        : "",
-      professorReviewMemo: body.options.outputs.professorReviewMemo
-        ? rawResult.professorReviewMemo
-        : "",
-    };
+    const result: GenerationResult = applyOutputFilters(
+      normalized,
+      body.options.outputs
+    );
+
+    if (!hasDraftContent(result)) {
+      return NextResponse.json(
+        {
+          error:
+            "초안 내용을 작성하지 못했습니다. 포함 항목을 확인하고 다시 시도해 주세요.",
+        },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({ result });
   } catch (error) {
@@ -98,7 +92,7 @@ export async function POST(request: Request) {
         error:
           error instanceof Error
             ? error.message
-            : "생성 중 오류가 발생했습니다.",
+            : "초안 작성 중 오류가 발생했습니다.",
       },
       { status: 500 }
     );

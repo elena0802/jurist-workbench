@@ -4,6 +4,10 @@ import { useState } from "react";
 import type { GenerationOptions, GenerationResult } from "@/types";
 import { legalIssues } from "@/data/legal-issues";
 import { mapDocumentsToLegacyAssetIds } from "@/data/knowledge-base";
+import {
+  hasDraftContent,
+  normalizeGenerationResult,
+} from "@/lib/normalize-draft-result";
 import Header from "@/components/Header";
 import WorkflowStepper from "@/components/WorkflowStepper";
 import KnowledgeBaseBrowser from "@/components/KnowledgeBaseBrowser";
@@ -52,13 +56,26 @@ export default function WorkbenchClient() {
         }),
       });
 
-      const data = await response.json();
+      let data: { result?: unknown; error?: string };
+      try {
+        data = await response.json();
+      } catch {
+        throw new Error("서버 응답을 해석하지 못했습니다.");
+      }
 
       if (!response.ok) {
         throw new Error(data.error || "초안 작성 중 오류가 발생했습니다.");
       }
 
-      setResult(data.result);
+      const normalized = normalizeGenerationResult(data.result ?? data);
+
+      if (!hasDraftContent(normalized)) {
+        throw new Error(
+          "초안 내용을 받지 못했습니다. 포함 항목을 확인하고 다시 시도해 주세요."
+        );
+      }
+
+      setResult(normalized);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "초안 작성 중 오류가 발생했습니다."
@@ -117,7 +134,7 @@ export default function WorkbenchClient() {
               selectedDocumentIds={selectedDocumentIds}
               selectedIssueIds={selectedIssueIds}
               options={options}
-              hasDraft={result !== null}
+              hasDraft={hasDraftContent(result)}
             />
           </div>
         </div>
@@ -127,7 +144,7 @@ export default function WorkbenchClient() {
             selectedDocumentIds={selectedDocumentIds}
             selectedIssueIds={selectedIssueIds}
             options={options}
-            hasDraft={result !== null}
+            hasDraft={hasDraftContent(result)}
           />
         </div>
       </main>
