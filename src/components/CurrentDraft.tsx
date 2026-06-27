@@ -16,6 +16,7 @@ interface CurrentDraftProps {
   options: GenerationOptions;
   hasDraft: boolean;
   workflowPhase?: WorkflowPhase;
+  appliedRuleCount?: number;
 }
 
 function formatVolume(documentIds: string[]) {
@@ -29,6 +30,7 @@ export default function CurrentDraft({
   options,
   hasDraft,
   workflowPhase = "idle",
+  appliedRuleCount = 0,
 }: CurrentDraftProps) {
   const selectedCollections = getCollectionsForDocuments(selectedDocumentIds);
 
@@ -196,10 +198,15 @@ export default function CurrentDraft({
         )}
 
         {hasDraft && (
-          <div className="border-t border-border/80 bg-paper-dark/30 px-3.5 py-2">
+          <div className="border-t border-border/80 bg-paper-dark/30 px-3.5 py-2 space-y-1">
             <p className="text-[11px] text-accent">
               초안 작성 완료 · 본문에서 검수
             </p>
+            {appliedRuleCount > 0 && (
+              <p className="text-[10px] text-ink-muted">
+                적용 원칙: {appliedRuleCount}개
+              </p>
+            )}
           </div>
         )}
       </div>

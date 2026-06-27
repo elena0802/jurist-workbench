@@ -1,6 +1,13 @@
 "use client";
 
-import type { FindingDecision, ReviewFinding, ReviewFindingSeverity } from "@/types";
+import type {
+  AppliedRule,
+  FindingDecision,
+  ReviewFinding,
+  ReviewFindingSeverity,
+  RuleStatus,
+} from "@/types";
+import { getExamRuleById } from "@/data/exam-rules";
 
 interface ReviewFindingsListProps {
   findings: ReviewFinding[];
@@ -8,7 +15,9 @@ interface ReviewFindingsListProps {
   readOnly?: boolean;
   emptyMessage?: string;
   showEvidence?: boolean;
+  showAppliedRules?: boolean;
   expandFirstEvidence?: boolean;
+  expandFirstRules?: boolean;
 }
 
 const severityLabels: Record<ReviewFindingSeverity, string> = {
@@ -23,6 +32,86 @@ const severityStyles: Record<ReviewFindingSeverity, string> = {
   high: "border-accent/30 bg-accent/10 text-accent",
 };
 
+const ruleStatusStyles: Record<RuleStatus, string> = {
+  satisfied: "border-ink/20 bg-ink/5 text-ink-muted",
+  partial: "border-amber-200/80 bg-amber-50 text-amber-900",
+  violated: "border-red-200/80 bg-red-50 text-red-800",
+};
+
+function safeRule(rule: AppliedRule): AppliedRule {
+  const known = getExamRuleById(rule.ruleId);
+  return {
+    ruleId: rule.ruleId || "UNKNOWN",
+    title: known?.title ?? rule.title ?? "등록되지 않은 원칙",
+    category: rule.category ?? known?.category ?? "구성",
+    status: rule.status ?? "partial",
+    statusLabel: rule.statusLabel ?? "부분 충족",
+    explanation: rule.explanation?.trim() || "검토 근거를 확인할 수 없습니다.",
+  };
+}
+
+function AppliedRulesSection({
+  rules,
+  defaultOpen,
+}: {
+  rules: AppliedRule[];
+  defaultOpen: boolean;
+}) {
+  const safeRules =
+    rules.length > 0
+      ? rules.map(safeRule)
+      : [
+          {
+            ruleId: "—",
+            title: "등록되지 않은 원칙",
+            category: "구성",
+            status: "partial" as RuleStatus,
+            statusLabel: "부분 충족" as const,
+            explanation: "적용 원칙 정보를 불러오지 못했습니다.",
+          },
+        ];
+
+  return (
+    <details
+      className="mt-2.5 rounded-sm border border-border/80 bg-highlight/25"
+      open={defaultOpen}
+    >
+      <summary className="cursor-pointer px-2.5 py-1.5 text-[11px] font-medium text-ink-muted hover:bg-highlight/50">
+        적용 원칙
+        <span className="ml-1.5 font-normal text-ink-faint">
+          {safeRules.length}건
+        </span>
+      </summary>
+      <ul className="space-y-2 border-t border-border/60 px-2.5 py-2">
+        {safeRules.map((rule) => (
+          <li
+            key={`${rule.ruleId}-${rule.title}`}
+            className="rounded-sm border border-border/60 bg-paper/70 px-2 py-1.5"
+          >
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="font-mono text-[10px] text-ink-faint">
+                {rule.ruleId}
+              </span>
+              <span
+                className={`rounded-sm border px-1.5 py-px text-[10px] font-medium ${ruleStatusStyles[rule.status]}`}
+              >
+                {rule.statusLabel}
+              </span>
+            </div>
+            <p className="mt-1 text-[11px] font-medium leading-snug text-ink">
+              {rule.title}
+            </p>
+            <p className="mt-0.5 text-[10px] leading-relaxed text-ink-muted">
+              <span className="text-ink-faint">검토 근거 · </span>
+              {rule.explanation}
+            </p>
+          </li>
+        ))}
+      </ul>
+    </details>
+  );
+}
+
 function FindingEvidence({
   finding,
   defaultOpen,
@@ -30,13 +119,15 @@ function FindingEvidence({
   finding: ReviewFinding;
   defaultOpen: boolean;
 }) {
-  const evidenceText = finding.evidenceText?.trim() || "자료 근거를 확인할 수 없습니다.";
+  const evidenceText =
+    finding.evidenceText?.trim() || "자료 근거를 확인할 수 없습니다.";
   const recommendedReason =
     finding.recommendedReason?.trim() || "반영 이유를 확인할 수 없습니다.";
   const expectedEffect =
     finding.expectedEffect?.trim() || "예상 효과를 확인할 수 없습니다.";
   const reasoningBasis =
-    finding.reasoningBasis?.trim() || "출제 원칙 검토 근거를 확인할 수 없습니다.";
+    finding.reasoningBasis?.trim() ||
+    "출제 원칙 검토 근거를 확인할 수 없습니다.";
 
   return (
     <details
@@ -82,7 +173,9 @@ export default function ReviewFindingsList({
   readOnly = false,
   emptyMessage = "표시할 검토 제안이 없습니다.",
   showEvidence = true,
+  showAppliedRules = true,
   expandFirstEvidence = false,
+  expandFirstRules = false,
 }: ReviewFindingsListProps) {
   if (!findings.length) {
     return (
@@ -120,12 +213,20 @@ export default function ReviewFindingsList({
                 중요도 {severityLabels[severity]}
               </span>
             </div>
-            <p className="text-[13px] leading-relaxed text-ink">{finding.finding}</p>
+            <p className="text-[13px] leading-relaxed text-ink">
+              {finding.finding}
+            </p>
             {finding.suggestedAction && (
               <p className="mt-1.5 text-[12px] leading-relaxed text-ink-muted">
                 <span className="text-ink-faint">제안 조치 · </span>
                 {finding.suggestedAction}
               </p>
+            )}
+            {showAppliedRules && (
+              <AppliedRulesSection
+                rules={finding.appliedRules ?? []}
+                defaultOpen={expandFirstRules && index === 0}
+              />
             )}
             {showEvidence && (
               <FindingEvidence

@@ -16,6 +16,9 @@ export function buildLocalRevisionSummary(
   const applied: string[] = [];
   const evidenceApplied: string[] = [];
   const expectedEffects: string[] = [];
+  const rulesApplied: string[] = [];
+  const rulesImproved: string[] = [];
+  const rulesPreserved: string[] = [];
 
   for (const finding of approvedFindings) {
     applied.push(`[${finding.category}] ${finding.suggestedAction}`);
@@ -30,6 +33,25 @@ export function buildLocalRevisionSummary(
 
     if (finding.expectedEffect.trim()) {
       expectedEffects.push(`[${finding.category}] ${finding.expectedEffect}`);
+    }
+
+    for (const rule of finding.appliedRules ?? []) {
+      const ruleLine = `${rule.ruleId}: ${rule.title}`;
+      if (!rulesApplied.includes(ruleLine)) {
+        rulesApplied.push(ruleLine);
+      }
+
+      if (rule.status === "violated" || rule.status === "partial") {
+        rulesImproved.push(
+          `${rule.ruleId} (${rule.statusLabel}) → ${finding.suggestedAction}`
+        );
+      }
+
+      if (rule.status === "satisfied") {
+        rulesPreserved.push(
+          `${rule.ruleId} (${rule.statusLabel}): ${rule.title}`
+        );
+      }
     }
   }
 
@@ -53,6 +75,10 @@ export function buildLocalRevisionSummary(
 
   preserved.push("1차 초안의 전체 구조와 학술적 문체");
   preserved.push("선택된 평가 쟁점의 기본 골격");
+
+  if (rulesPreserved.length === 0) {
+    rulesPreserved.push("충족 상태로 유지된 출제 원칙");
+  }
 
   const hasDifficultyFinding = approvedFindings.some(
     (f) => f.category === "난이도"
@@ -98,6 +124,13 @@ export function buildLocalRevisionSummary(
       expectedEffects.length > 0
         ? expectedEffects
         : ["기대 효과 정보 없음"],
+    rulesApplied:
+      rulesApplied.length > 0 ? rulesApplied : ["적용된 출제 원칙 없음"],
+    rulesImproved:
+      rulesImproved.length > 0
+        ? rulesImproved
+        : ["미충족·부분 충족 원칙 개선 항목 없음"],
+    rulesPreserved,
     professorInstructionApplied: professorInstruction.trim().length > 0,
     professorInstructionNote: professorInstruction.trim()
       ? "교수님 추가 지시를 반영하였습니다."
@@ -119,12 +152,18 @@ export function normalizeRevisionSummary(input: unknown): RevisionSummary | null
   const applied = toStringArray(record.applied);
   const evidenceApplied = toStringArray(record.evidenceApplied);
   const expectedEffects = toStringArray(record.expectedEffects);
+  const rulesApplied = toStringArray(record.rulesApplied);
+  const rulesImproved = toStringArray(record.rulesImproved);
+  const rulesPreserved = toStringArray(record.rulesPreserved);
 
   return {
     applied,
     preserved: toStringArray(record.preserved),
     evidenceApplied,
     expectedEffects,
+    rulesApplied,
+    rulesImproved,
+    rulesPreserved,
     professorInstructionApplied: Boolean(record.professorInstructionApplied),
     professorInstructionNote: String(
       record.professorInstructionNote ?? ""

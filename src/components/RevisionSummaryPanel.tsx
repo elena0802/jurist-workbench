@@ -42,6 +42,9 @@ const emptySummary: RevisionSummary = {
   preserved: ["1차 초안의 전체 구조와 학술적 문체"],
   evidenceApplied: [],
   expectedEffects: [],
+  rulesApplied: [],
+  rulesImproved: [],
+  rulesPreserved: [],
   professorInstructionApplied: false,
   professorInstructionNote: "교수님 추가 지시 없음",
   difficultyChange: "—",
@@ -120,6 +123,27 @@ export default function RevisionSummaryPanel({
           <p className="text-[13px] text-ink-muted">
             {safe.issueStructureChange || "—"}
           </p>
+        </div>
+
+        <div className="sm:col-span-2 border-t border-border/60 pt-4">
+          <h3 className="mb-3 text-xs font-medium text-ink">출제 원칙 반영</h3>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <SummaryList
+              title="적용 원칙"
+              items={safe.rulesApplied ?? []}
+              emptyText="적용 원칙 없음"
+            />
+            <SummaryList
+              title="개선된 원칙"
+              items={safe.rulesImproved ?? []}
+              emptyText="개선 항목 없음"
+            />
+            <SummaryList
+              title="유지된 원칙"
+              items={safe.rulesPreserved ?? []}
+              emptyText="유지 항목 없음"
+            />
+          </div>
         </div>
       </div>
     </section>

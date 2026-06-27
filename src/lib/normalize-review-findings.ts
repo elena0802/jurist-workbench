@@ -8,6 +8,12 @@ import type {
 } from "@/types";
 import { legalIssues } from "@/data/legal-issues";
 import { getDocumentById } from "@/data/knowledge-base";
+import {
+  buildDefaultAppliedRules,
+  getRelevantRules,
+  matchRulesToFinding,
+  normalizeAppliedRules,
+} from "@/lib/rule-matching";
 
 const VALID_CATEGORIES: ReviewFindingCategory[] = [
   "사실관계",
@@ -59,7 +65,7 @@ export function fillFindingEvidence(
     issueNames: string[];
     category?: ReviewFindingCategory;
   }
-): ReviewFindingPayload {
+): Omit<ReviewFindingPayload, "appliedRules"> {
   const category = partial.category ?? context.category ?? "구성";
   const finding = partial.finding?.trim() ?? "";
   const suggestedAction =
@@ -96,6 +102,45 @@ export function fillFindingEvidence(
   };
 }
 
+function finalizeFinding(
+  id: string,
+  partial: Partial<ReviewFindingPayload>,
+  context: {
+    documentTitles: string[];
+    issueNames: string[];
+    category?: ReviewFindingCategory;
+  },
+  issueIds: string[],
+  options: GenerationOptions,
+  rawAppliedRules?: unknown,
+  decision: FindingDecision = "accept"
+): ReviewFinding {
+  const base = fillFindingEvidence(partial, context);
+  const payload: ReviewFindingPayload = { ...base, appliedRules: [] };
+
+  let appliedRules = normalizeAppliedRules(
+    rawAppliedRules,
+    payload,
+    issueIds
+  );
+
+  if (!rawAppliedRules || (Array.isArray(rawAppliedRules) && rawAppliedRules.length === 0)) {
+    const relevant = getRelevantRules(issueIds, options);
+    appliedRules = matchRulesToFinding(payload, relevant);
+  }
+
+  if (appliedRules.length === 0) {
+    appliedRules = buildDefaultAppliedRules(payload, issueIds);
+  }
+
+  return {
+    id,
+    decision,
+    ...base,
+    appliedRules,
+  };
+}
+
 export function buildDefaultReviewFindings(
   issueIds: string[],
   options: GenerationOptions,
@@ -115,11 +160,8 @@ export function buildDefaultReviewFindings(
   const withDecision = (
     id: string,
     payload: Partial<ReviewFindingPayload>
-  ): ReviewFinding => ({
-    id,
-    decision: "accept" as FindingDecision,
-    ...fillFindingEvidence(payload, context),
-  });
+  ): ReviewFinding =>
+    finalizeFinding(id, payload, context, issueIds, options);
 
   const findings: ReviewFinding[] = [];
 
@@ -194,8 +236,8 @@ export function buildDefaultReviewFindings(
         finding:
           "채점기준의 배점·흔한 오류·핵심 판단 포인트가 더 구체화될 수 있습니다.",
         suggestedAction: "쟁점별 배점과 학생 오답 유형을 항목화하세요.",
-        evidenceDocuments: docPair.filter((d) =>
-          d.includes("채점") || d.includes("해설")
+        evidenceDocuments: docPair.filter(
+          (d) => d.includes("채점") || d.includes("해설")
         ).length
           ? docPair.filter((d) => d.includes("채점") || d.includes("해설"))
           : docPair.length
@@ -260,7 +302,18 @@ export function buildDefaultReviewFindings(
 export function normalizeReviewFindings(
   input: unknown,
   documentIds: string[] = [],
-  issueIds: string[] = []
+  issueIds: string[] = [],
+  options: GenerationOptions = {
+    purpose: "모의시험",
+    difficulty: "로스쿨",
+    outputs: {
+      caseProblem: true,
+      examIntent: true,
+      issueStructure: true,
+      gradingCriteria: true,
+      professorReviewMemo: true,
+    },
+  }
 ): ReviewFinding[] {
   if (!input) return [];
 
@@ -281,19 +334,17 @@ export function normalizeReviewFindings(
   const normalized = raw
     .map((item, index) => {
       if (typeof item === "string" && item.trim()) {
-        const filled = fillFindingEvidence(
+        return finalizeFinding(
+          `finding-${index}`,
           {
             category: "구성",
             finding: item.trim(),
             suggestedAction: "해당 지적을 반영하여 초안을 보완하세요.",
           },
-          context
+          context,
+          issueIds,
+          options
         );
-        return {
-          id: `finding-${index}`,
-          decision: "accept" as FindingDecision,
-          ...filled,
-        } satisfies ReviewFinding;
       }
       if (typeof item !== "object" || item === null) return null;
       const record = item as Record<string, unknown>;
@@ -302,7 +353,8 @@ export function normalizeReviewFindings(
       ).trim();
       if (!finding) return null;
 
-      const filled = fillFindingEvidence(
+      return finalizeFinding(
+        String(record.id ?? `finding-${index}`),
         {
           category: coerceCategory(record.category),
           finding,
@@ -320,14 +372,11 @@ export function normalizeReviewFindings(
           expectedEffect: String(record.expectedEffect ?? ""),
           severity: coerceSeverity(record.severity),
         },
-        { ...context, category: coerceCategory(record.category) }
+        { ...context, category: coerceCategory(record.category) },
+        issueIds,
+        options,
+        record.appliedRules
       );
-
-      return {
-        id: String(record.id ?? `finding-${index}`),
-        decision: "accept" as FindingDecision,
-        ...filled,
-      } satisfies ReviewFinding;
     })
     .filter((item): item is ReviewFinding => item !== null);
 
@@ -347,5 +396,6 @@ export function toRevisionFindingPayload(
     recommendedReason: finding.recommendedReason,
     expectedEffect: finding.expectedEffect,
     severity: finding.severity,
+    appliedRules: finding.appliedRules ?? [],
   };
 }

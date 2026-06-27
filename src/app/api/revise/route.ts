@@ -20,14 +20,16 @@ function toSummaryFinding(
   id: string,
   decision: "accept" | "ignore"
 ): ReviewFinding {
+  const base = fillFindingEvidence(payload, {
+    documentTitles: payload.evidenceDocuments ?? [],
+    issueNames: [],
+    category: payload.category,
+  });
   return {
     id,
     decision,
-    ...fillFindingEvidence(payload, {
-      documentTitles: payload.evidenceDocuments ?? [],
-      issueNames: [],
-      category: payload.category,
-    }),
+    ...base,
+    appliedRules: payload.appliedRules ?? [],
   };
 }
 

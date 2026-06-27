@@ -16,6 +16,17 @@ export type FindingDecision = "accept" | "ignore";
 
 export type ReviewFindingSeverity = "low" | "medium" | "high";
 
+export type RuleStatus = "satisfied" | "partial" | "violated";
+
+export interface AppliedRule {
+  ruleId: string;
+  title: string;
+  category: string;
+  status: RuleStatus;
+  statusLabel: "충족" | "부분 충족" | "미충족";
+  explanation: string;
+}
+
 export interface ReviewFindingPayload {
   category: ReviewFindingCategory;
   finding: string;
@@ -26,6 +37,7 @@ export interface ReviewFindingPayload {
   recommendedReason: string;
   expectedEffect: string;
   severity: ReviewFindingSeverity;
+  appliedRules: AppliedRule[];
 }
 
 export interface ReviewFinding extends ReviewFindingPayload {
@@ -46,6 +58,9 @@ export interface RevisionSummary {
   preserved: string[];
   evidenceApplied: string[];
   expectedEffects: string[];
+  rulesApplied: string[];
+  rulesImproved: string[];
+  rulesPreserved: string[];
   professorInstructionApplied: boolean;
   professorInstructionNote: string;
   difficultyChange: string;

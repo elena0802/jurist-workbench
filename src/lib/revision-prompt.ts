@@ -4,6 +4,19 @@ import { legalIssues } from "@/data/legal-issues";
 import { formatSelectedDocumentsForPrompt } from "@/data/knowledge-base";
 import { outputLabels } from "@/data/generation-options";
 import { buildDraftPlainText } from "@/lib/format-draft-content";
+import { ruleStatusLabel } from "@/lib/rule-matching";
+
+function formatAppliedRules(
+  rules: RevisionRequest["approvedFindings"][number]["appliedRules"]
+): string {
+  if (!rules?.length) return "(적용 원칙 없음)";
+  return rules
+    .map((rule) => {
+      const label = rule.statusLabel ?? ruleStatusLabel(rule.status);
+      return `  · [${rule.ruleId}] ${rule.title} — ${label}: ${rule.explanation}`;
+    })
+    .join("\n");
+}
 
 export function buildRevisionPrompt(request: RevisionRequest): string {
   const selectedIssues = legalIssues.filter((issue) =>
@@ -31,7 +44,9 @@ export function buildRevisionPrompt(request: RevisionRequest): string {
       return `- [${f.category}] 발견: ${f.finding}
   조치: ${f.suggestedAction}
   반영 이유: ${f.recommendedReason}
-  예상 효과: ${f.expectedEffect}${docs}`;
+  예상 효과: ${f.expectedEffect}${docs}
+  적용 원칙:
+${formatAppliedRules(f.appliedRules)}`;
     })
     .join("\n\n");
 
@@ -58,6 +73,11 @@ export function buildRevisionPrompt(request: RevisionRequest): string {
 - 무시(제외)된 검토 항목은 반영하지 마세요.
 - 승인된 각 항목의 suggestedAction을 실행하고, recommendedReason과 expectedEffect가 드러나도록 수정하세요.
 - 허위 판례 인용·조문 날조·법적 결론의 단정을 금지합니다.
+
+## 출제 원칙 반영 지침
+- 미충족·부분 충족으로 표시된 원칙은 수정을 통해 개선하세요.
+- 충족으로 표시된 원칙에 해당하는 강점은 과도하게 수정하지 마세요.
+- 1차 초안의 학술적 톤과 유효한 구조는 보존하세요.
 
 ## 1차 출제 초안
 ${originalDraftText}
@@ -87,10 +107,11 @@ ${request.professorInstruction.trim() || "(추가 지시 없음)"}
 
 ## 수정 지침
 1. 승인된 검토·체크리스트·교수 지시만 반영하세요.
-2. 각 승인 항목의 예상 효과(expectedEffect)가 초안에서 실현되도록 구체적으로 수정하세요.
-3. 변경 사항이 교수 검수 메모에 무엇이 바뀌었는지 드러나게 기록하세요.
-4. 사실관계·쟁점·채점기준·출제의도의 일관성을 유지하세요.
-5. 모든 내용은 한국어로 작성하세요.
+2. 각 승인 항목의 예상 효과(expectedEffect)와 출제 원칙(미충족·부분 충족)이 실현되도록 수정하세요.
+3. 충족 원칙에 해당하는 부분은 불필요하게 뒤흔들지 마세요.
+4. 변경 사항이 교수 검수 메모에 무엇이 바뀌었는지 드러나게 기록하세요.
+5. 사실관계·쟁점·채점기준·출제의도의 일관성을 유지하세요.
+6. 모든 내용은 한국어로 작성하세요.
 
 ## 출력 형식
 반드시 아래 JSON 키만 사용. 모든 값은 문자열입니다.

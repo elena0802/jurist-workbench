@@ -101,6 +101,8 @@ export type WorkflowPhase =
 export type {
   ReviewFindingCategory,
   ReviewFindingSeverity,
+  RuleStatus,
+  AppliedRule,
   FindingDecision,
   ReviewFinding,
   ReviewFindingPayload,
