@@ -68,6 +68,8 @@ export interface RevisionSummary {
   rulesImproved: string[];
   rulesPreserved: string[];
   ruleSatisfactionPlans: string[];
+  improvementsMade: string[];
+  remainingRecommendations: string[];
   professorInstructionApplied: boolean;
   professorInstructionNote: string;
   difficultyChange: string;

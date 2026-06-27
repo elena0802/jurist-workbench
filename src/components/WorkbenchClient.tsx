@@ -10,7 +10,7 @@ import type {
   WorkflowPhase,
 } from "@/types";
 import { legalIssues } from "@/data/legal-issues";
-import { mapDocumentsToLegacyAssetIds } from "@/data/knowledge-base";
+import { getDocumentById, mapDocumentsToLegacyAssetIds } from "@/data/knowledge-base";
 import {
   hasDraftContent,
   normalizeGenerationResult,
@@ -79,6 +79,24 @@ export default function WorkbenchClient() {
     issueIds: selectedIssueIds,
     options,
   };
+
+  const selectedIssues = useMemo(
+    () =>
+      selectedIssueIds
+        .map((id) => legalIssues.find((issue) => issue.id === id))
+        .filter((issue): issue is (typeof legalIssues)[number] => Boolean(issue)),
+    [selectedIssueIds]
+  );
+
+  const selectedDocuments = useMemo(
+    () =>
+      selectedDocumentIds
+        .map((id) => getDocumentById(id)?.document)
+        .filter((doc): doc is NonNullable<ReturnType<typeof getDocumentById>>["document"] =>
+          Boolean(doc)
+        ),
+    [selectedDocumentIds]
+  );
 
   const hasDraftV1 = hasDraftContent(draftV1);
   const hasRevisedDraft = hasDraftContent(revisedDraft);
@@ -426,6 +444,10 @@ export default function WorkbenchClient() {
             {hasDraftV1 && !reviewConfirmed && (
               <DraftReviewPanel
                 findings={reviewFindings}
+                selectedIssues={selectedIssues}
+                selectedDocuments={selectedDocuments}
+                purpose={options.purpose}
+                difficulty={options.difficulty}
                 onFindingDecision={handleFindingDecision}
                 onContinue={() => setReviewConfirmed(true)}
                 isLoading={isReviewing}

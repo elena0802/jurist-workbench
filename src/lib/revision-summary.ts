@@ -21,6 +21,9 @@ export function buildLocalRevisionSummary(
   const rulesPreserved: string[] = [];
   const ruleSatisfactionPlans: string[] = [];
 
+  const improvementsMade: string[] = [];
+  const remainingRecommendations: string[] = [];
+
   for (const finding of approvedFindings) {
     applied.push(`[${finding.category}] ${finding.suggestedAction}`);
 
@@ -45,6 +48,10 @@ export function buildLocalRevisionSummary(
       if (rule.status === "violated" || rule.status === "partial") {
         rulesImproved.push(
           `${rule.ruleId} (${rule.statusLabel}) → ${finding.suggestedAction}`
+        );
+
+        improvementsMade.push(
+          `[${finding.category}] ${rule.expectedImprovement || finding.expectedEffect || finding.suggestedAction}`
         );
 
         ruleSatisfactionPlans.push(
@@ -72,6 +79,12 @@ export function buildLocalRevisionSummary(
   }
 
   const preserved: string[] = [];
+
+  for (const finding of ignoredFindings) {
+    remainingRecommendations.push(
+      `[${finding.category}] ${finding.finding} — ${finding.suggestedAction}`
+    );
+  }
 
   if (ignoredFindings.length > 0) {
     preserved.push(
@@ -143,6 +156,11 @@ export function buildLocalRevisionSummary(
       ruleSatisfactionPlans.length > 0
         ? ruleSatisfactionPlans
         : ["원칙 충족 방안 정보 없음"],
+    improvementsMade:
+      improvementsMade.length > 0
+        ? improvementsMade
+        : applied.filter((item) => !item.startsWith("[체크리스트]") && !item.startsWith("[교수 지시]")),
+    remainingRecommendations,
     professorInstructionApplied: professorInstruction.trim().length > 0,
     professorInstructionNote: professorInstruction.trim()
       ? "교수님 추가 지시를 반영하였습니다."
@@ -168,6 +186,8 @@ export function normalizeRevisionSummary(input: unknown): RevisionSummary | null
   const rulesImproved = toStringArray(record.rulesImproved);
   const rulesPreserved = toStringArray(record.rulesPreserved);
   const ruleSatisfactionPlans = toStringArray(record.ruleSatisfactionPlans);
+  const improvementsMade = toStringArray(record.improvementsMade);
+  const remainingRecommendations = toStringArray(record.remainingRecommendations);
 
   return {
     applied,
@@ -178,6 +198,8 @@ export function normalizeRevisionSummary(input: unknown): RevisionSummary | null
     rulesImproved,
     rulesPreserved,
     ruleSatisfactionPlans,
+    improvementsMade,
+    remainingRecommendations,
     professorInstructionApplied: Boolean(record.professorInstructionApplied),
     professorInstructionNote: String(
       record.professorInstructionNote ?? ""

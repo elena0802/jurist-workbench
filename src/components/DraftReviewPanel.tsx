@@ -1,12 +1,22 @@
 "use client";
 
-import type { ReviewFinding } from "@/types";
-import { summarizeRuleInspection } from "@/lib/rule-matching";
-import { summarizeFindingPriorities } from "@/lib/finding-priority";
+import type {
+  GenerationDifficulty,
+  GenerationPurpose,
+  KnowledgeDocument,
+  LegalIssue,
+  ReviewFinding,
+} from "@/types";
+import ProfessorVerdict from "@/components/ProfessorVerdict";
+import DraftReviewExecutiveSummary from "@/components/DraftReviewExecutiveSummary";
 import ReviewFindingsList from "@/components/ReviewFindingsList";
 
 interface DraftReviewPanelProps {
   findings: ReviewFinding[];
+  selectedIssues: LegalIssue[];
+  selectedDocuments: KnowledgeDocument[];
+  purpose: GenerationPurpose;
+  difficulty: GenerationDifficulty;
   onFindingDecision: (id: string, decision: "accept" | "ignore") => void;
   onContinue: () => void;
   isLoading?: boolean;
@@ -14,44 +24,12 @@ interface DraftReviewPanelProps {
   disabled?: boolean;
 }
 
-function ReviewSummaryBox({ findings }: { findings: ReviewFinding[] }) {
-  const priorities = summarizeFindingPriorities(findings);
-  const rules = summarizeRuleInspection(findings);
-
-  if (findings.length === 0) return null;
-
-  return (
-    <div className="rounded-sm border border-ink/20 bg-ink/[0.03] px-4 py-3">
-      <p className="text-[10px] font-semibold tracking-[0.08em] text-ink-faint uppercase">
-        Review Summary
-      </p>
-      <h3 className="mt-0.5 font-serif text-sm font-semibold text-ink">
-        검토 요약
-      </h3>
-      <p className="mt-1.5 text-[13px] leading-relaxed text-ink-muted">
-        <span className="font-medium text-accent">필수 수정 {priorities.required}</span>
-        <span className="mx-1.5 text-ink-faint">·</span>
-        <span className="text-amber-900">권장 수정 {priorities.recommended}</span>
-        <span className="mx-1.5 text-ink-faint">·</span>
-        <span>선택 수정 {priorities.optional}</span>
-        <span className="mx-1.5 text-ink-faint">·</span>
-        <span>적용 원칙 {rules.total}</span>
-      </p>
-      {rules.total > 0 && (
-        <p className="mt-1 text-[11px] text-ink-faint">
-          충족 {rules.satisfied} · 부분 충족 {rules.partial} · 미충족{" "}
-          {rules.violated}
-        </p>
-      )}
-      <p className="mt-2 text-[11px] leading-relaxed text-ink-faint">
-        이 검토는 선택된 자료와 적용 원칙을 기준으로 제안되었습니다.
-      </p>
-    </div>
-  );
-}
-
 export default function DraftReviewPanel({
   findings,
+  selectedIssues,
+  selectedDocuments,
+  purpose,
+  difficulty,
   onFindingDecision,
   onContinue,
   isLoading = false,
@@ -71,8 +49,8 @@ export default function DraftReviewPanel({
           초안 검토
         </h2>
         <p className="mt-1 text-xs leading-relaxed text-ink-muted">
-          출제 원칙에 따라 1차 초안을 점검했습니다. 요약과 우선순위를 확인한 뒤
-          교수 승인 단계로 진행하세요.
+          교수 검토 의견과 요약을 먼저 확인한 뒤, 필요 시 세부 논리를 펼쳐
+          보세요.
         </p>
       </div>
 
@@ -92,11 +70,19 @@ export default function DraftReviewPanel({
               </div>
             )}
 
-            <ReviewSummaryBox findings={findings} />
+            <ProfessorVerdict
+              findings={findings}
+              selectedIssues={selectedIssues}
+              selectedDocuments={selectedDocuments}
+              purpose={purpose}
+              difficulty={difficulty}
+            />
+
+            <DraftReviewExecutiveSummary findings={findings} />
 
             <div>
               <h3 className="mb-2 text-xs font-medium text-ink">
-                발견된 보완 지점
+                핵심 보완 지점
                 <span className="ml-2 font-normal text-ink-faint">
                   {findings.length}건
                 </span>

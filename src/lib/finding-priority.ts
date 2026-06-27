@@ -1,4 +1,4 @@
-import type { ReviewFinding, RuleStatus } from "@/types";
+import type { ReviewFinding, RuleStatus, ReviewFindingSeverity } from "@/types";
 
 export type FindingPriority = "required" | "recommended" | "optional";
 
@@ -50,6 +50,33 @@ export function summarizeFindingPriorities(findings: ReviewFinding[]) {
   }
 
   return { required, recommended, optional, total: findings.length };
+}
+
+const PRIORITY_ORDER: Record<FindingPriority, number> = {
+  required: 0,
+  recommended: 1,
+  optional: 2,
+};
+
+const SEVERITY_ORDER: Record<ReviewFindingSeverity, number> = {
+  high: 0,
+  medium: 1,
+  low: 2,
+};
+
+export function sortFindingsByImportance(
+  findings: ReviewFinding[]
+): ReviewFinding[] {
+  return [...findings].sort((a, b) => {
+    const pa = getFindingPriority(a).priority;
+    const pb = getFindingPriority(b).priority;
+    if (PRIORITY_ORDER[pa] !== PRIORITY_ORDER[pb]) {
+      return PRIORITY_ORDER[pa] - PRIORITY_ORDER[pb];
+    }
+    const sa = a.severity ?? "medium";
+    const sb = b.severity ?? "medium";
+    return SEVERITY_ORDER[sa] - SEVERITY_ORDER[sb];
+  });
 }
 
 export const priorityStyles: Record<FindingPriority, string> = {

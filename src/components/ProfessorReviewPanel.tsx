@@ -3,6 +3,7 @@
 import type { ReviewChecklistId, ReviewFinding } from "@/types";
 import { reviewChecklistItems } from "@/data/review-checklist";
 import ReviewFindingsList from "@/components/ReviewFindingsList";
+import ApprovalDecisionSummary from "@/components/ApprovalDecisionSummary";
 
 interface ProfessorReviewPanelProps {
   findings: ReviewFinding[];
@@ -64,13 +65,13 @@ export default function ProfessorReviewPanel({
       </div>
 
       <div className="space-y-6 p-5">
+        <p className="text-[13px] leading-relaxed text-ink-muted">
+          아래 검토 의견 중 이번 수정에 반영할 항목을 승인하십시오.
+        </p>
+
+        <ApprovalDecisionSummary findings={findings} />
+
         <div>
-          <h3 className="mb-3 text-xs font-medium text-ink">
-            검토 제안
-            <span className="ml-2 font-normal text-ink-faint">
-              반영 · 무시 선택
-            </span>
-          </h3>
           <ReviewFindingsList
             findings={findings}
             onDecisionChange={onFindingDecision}

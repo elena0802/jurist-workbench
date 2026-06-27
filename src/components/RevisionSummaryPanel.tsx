@@ -50,6 +50,8 @@ const emptySummary: RevisionSummary = {
   rulesImproved: [],
   rulesPreserved: [],
   ruleSatisfactionPlans: [],
+  improvementsMade: [],
+  remainingRecommendations: [],
   professorInstructionApplied: false,
   professorInstructionNote: "교수님 추가 지시 없음",
   difficultyChange: "—",
@@ -73,6 +75,13 @@ export default function RevisionSummaryPanel({
     (safe.rulesImproved?.length ?? 0) > 0 ||
     (safe.rulesPreserved?.length ?? 0) > 0;
 
+  const improvements =
+    safe.improvementsMade?.length > 0
+      ? safe.improvementsMade
+      : (safe.rulesImproved ?? []).map((item) => `개선 · ${item}`);
+
+  const remaining = safe.remainingRecommendations ?? [];
+
   return (
     <section className="academic-shadow rounded-sm border border-border bg-paper">
       <div className="border-b border-border bg-paper-dark/40 px-5 py-4">
@@ -83,16 +92,13 @@ export default function RevisionSummaryPanel({
           수정 요약
         </h2>
         <p className="mt-1 text-xs leading-relaxed text-ink-muted">
-          승인된 검토·출제 원칙·교수 지시가 어떻게 반영되었는지 요약합니다.
+          출제 원칙 반영 결과와 이번 수정으로 달라진 점을 요약합니다.
         </p>
       </div>
 
       <div className="space-y-6 p-5">
         <div className="rounded-sm border-2 border-accent/25 bg-accent/[0.04] px-4 py-4">
-          <p className="text-[10px] font-semibold tracking-[0.08em] text-accent uppercase">
-            Exam Rules
-          </p>
-          <h3 className="mt-0.5 font-serif text-base font-semibold text-ink">
+          <h3 className="font-serif text-base font-semibold text-ink">
             출제 원칙 반영
           </h3>
           <p className="mt-1 text-[11px] text-ink-faint">
@@ -125,12 +131,6 @@ export default function RevisionSummaryPanel({
                   mono
                 />
               </div>
-              <SummaryList
-                title="원칙 충족 방안"
-                items={safe.ruleSatisfactionPlans ?? []}
-                emptyText="원칙 충족 방안 정보 없음"
-                mono
-              />
             </div>
           ) : (
             <p className="mt-3 text-[13px] italic text-ink-faint">
@@ -139,54 +139,83 @@ export default function RevisionSummaryPanel({
           )}
         </div>
 
-        <div className="grid gap-6 sm:grid-cols-2">
-          <SummaryList
-            title="반영된 검토 내용"
-            items={safe.applied}
-            emptyText="반영 항목 없음"
-          />
-          <SummaryList
-            title="근거 기반 반영 항목"
-            items={safe.evidenceApplied ?? []}
-            emptyText="근거 기반 반영 항목 없음"
-          />
-          <SummaryList
-            title="유지한 내용"
-            items={safe.preserved}
-            emptyText="유지 항목 정보 없음"
-          />
-          <SummaryList
-            title="기대 효과"
-            items={safe.expectedEffects ?? []}
-            emptyText="기대 효과 정보 없음"
-          />
+        <SummaryList
+          title="이번 수정으로 개선된 사항"
+          items={improvements}
+          emptyText="개선 사항 정보 없음"
+        />
 
-          <div>
-            <h3 className="mb-2 text-xs font-medium text-ink">
-              교수 추가 지시 반영 여부
-            </h3>
-            <p className="text-[13px] text-ink-muted">
-              {safe.professorInstructionNote ||
-                (safe.professorInstructionApplied
-                  ? "교수님 추가 지시를 반영하였습니다."
-                  : "교수님 추가 지시 없음")}
-            </p>
-          </div>
+        {remaining.length > 0 && (
+          <SummaryList
+            title="남은 권고 사항"
+            items={remaining}
+            emptyText="남은 권고 사항 없음"
+          />
+        )}
 
-          <div>
-            <h3 className="mb-2 text-xs font-medium text-ink">난이도 변화</h3>
-            <p className="text-[13px] text-ink-muted">
-              {safe.difficultyChange || "—"}
-            </p>
-          </div>
+        <details className="rounded-sm border border-border/70 bg-paper-dark/10">
+          <summary className="cursor-pointer px-4 py-2.5 text-xs font-medium text-ink-muted hover:bg-highlight/40">
+            상세 반영 내역 보기
+          </summary>
+          <div className="space-y-6 border-t border-border/60 p-4">
+            <div className="grid gap-6 sm:grid-cols-2">
+              <SummaryList
+                title="반영된 검토 내용"
+                items={safe.applied}
+                emptyText="반영 항목 없음"
+              />
+              <SummaryList
+                title="근거 기반 반영 항목"
+                items={safe.evidenceApplied ?? []}
+                emptyText="근거 기반 반영 항목 없음"
+              />
+              <SummaryList
+                title="유지한 내용"
+                items={safe.preserved}
+                emptyText="유지 항목 정보 없음"
+              />
+              <SummaryList
+                title="기대 효과"
+                items={safe.expectedEffects ?? []}
+                emptyText="기대 효과 정보 없음"
+              />
+              <SummaryList
+                title="원칙 충족 방안"
+                items={safe.ruleSatisfactionPlans ?? []}
+                emptyText="원칙 충족 방안 정보 없음"
+                mono
+              />
 
-          <div className="sm:col-span-2">
-            <h3 className="mb-2 text-xs font-medium text-ink">쟁점 구성 변화</h3>
-            <p className="text-[13px] text-ink-muted">
-              {safe.issueStructureChange || "—"}
-            </p>
+              <div>
+                <h3 className="mb-2 text-xs font-medium text-ink">
+                  교수 추가 지시 반영 여부
+                </h3>
+                <p className="text-[13px] text-ink-muted">
+                  {safe.professorInstructionNote ||
+                    (safe.professorInstructionApplied
+                      ? "교수님 추가 지시를 반영하였습니다."
+                      : "교수님 추가 지시 없음")}
+                </p>
+              </div>
+
+              <div>
+                <h3 className="mb-2 text-xs font-medium text-ink">난이도 변화</h3>
+                <p className="text-[13px] text-ink-muted">
+                  {safe.difficultyChange || "—"}
+                </p>
+              </div>
+
+              <div className="sm:col-span-2">
+                <h3 className="mb-2 text-xs font-medium text-ink">
+                  쟁점 구성 변화
+                </h3>
+                <p className="text-[13px] text-ink-muted">
+                  {safe.issueStructureChange || "—"}
+                </p>
+              </div>
+            </div>
           </div>
-        </div>
+        </details>
       </div>
     </section>
   );
