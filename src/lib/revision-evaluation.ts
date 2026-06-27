@@ -180,3 +180,58 @@ export function buildRevisionEvaluation(
     evaluatedItems,
   };
 }
+
+function keyImprovementLabel(
+  verdictPrimaryRecommendation: string | null,
+  approvedFindings: ReviewFinding[]
+): string {
+  if (verdictPrimaryRecommendation?.trim()) {
+    return verdictPrimaryRecommendation
+      .trim()
+      .replace(/[.．]+$/, "")
+      .replace(/하십시오$/, "");
+  }
+
+  const first = approvedFindings[0];
+  if (first?.suggestedAction?.trim()) {
+    return first.suggestedAction.trim().replace(/[.．]+$/, "");
+  }
+
+  return first?.finding?.trim() || "핵심 보완점";
+}
+
+function revisionFocusArea(approvedFindings: ReviewFinding[]): string {
+  const categories = new Set(approvedFindings.map((f) => f.category));
+  if (categories.has("사실관계") && categories.has("쟁점")) {
+    return "사실관계와 쟁점 구조";
+  }
+  if (categories.has("사실관계")) return "사실관계";
+  if (categories.has("쟁점")) return "쟁점 구조";
+  return "사실관계와 쟁점 구조";
+}
+
+export function buildRevisionRecordParagraph(
+  verdictPrimaryRecommendation: string | null,
+  approvedFindings: ReviewFinding[],
+  evaluation: RevisionEvaluation
+): string {
+  const keyPoint = keyImprovementLabel(
+    verdictPrimaryRecommendation,
+    approvedFindings
+  );
+  const focusArea = revisionFocusArea(approvedFindings);
+
+  if (approvedFindings.length === 0) {
+    return "승인된 검토 항목이 없어 수정 초안의 반영 범위를 단정하기 어렵습니다. 최종 출제 전에는 교수님의 추가 검수가 필요합니다.";
+  }
+
+  if (evaluation.status === "추가 검토 필요") {
+    return `수정 초안은 승인된 검토 항목을 반영하여 작성되었으나, 반영 여부에 대한 추가 확인이 필요합니다. 특히 ${keyPoint}에 관한 지적을 중심으로 ${focusArea} 보완이 시도되었습니다. 다만 최종 출제 전에는 교수님의 추가 검수가 필요합니다.`;
+  }
+
+  if (evaluation.status === "부분 반영") {
+    return `수정 초안은 승인된 검토 항목을 반영하여 작성되었습니다. 특히 ${keyPoint}에 관한 지적을 중심으로 ${focusArea}를 보완했으나, 일부 항목은 추가 확인이 필요합니다. 다만 최종 출제 전에는 교수님의 추가 검수가 필요합니다.`;
+  }
+
+  return `수정 초안은 승인된 검토 항목을 반영하여 작성되었습니다. 특히 ${keyPoint}에 관한 지적을 중심으로 ${focusArea}를 보완했습니다. 다만 최종 출제 전에는 교수님의 추가 검수가 필요합니다.`;
+}
