@@ -27,9 +27,15 @@ export async function POST(request: Request) {
 
     const body = (await request.json()) as GenerationRequest;
 
-    if (!body.assetIds?.length || !body.issueIds?.length) {
+    if (
+      (!body.assetIds?.length && !body.documentIds?.length) ||
+      !body.issueIds?.length
+    ) {
       return NextResponse.json(
-        { error: "교육 자료와 법적 쟁점을 각각 하나 이상 선택해 주세요." },
+        {
+          error:
+            "참고 자료와 평가 쟁점을 각각 하나 이상 선택해 주세요.",
+        },
         { status: 400 }
       );
     }
@@ -49,12 +55,15 @@ export async function POST(request: Request) {
       messages: [
         {
           role: "system",
-          content:
-            "당신은 한국 형사법 교수를 위한 출제 보조 AI입니다. 항상 유효한 JSON만 반환하세요.",
+          content: `당신은 한국 형사법 교수의 출제 초안을 작성하는 전문 보조자입니다.
+교수 검수를 전제로 하며, 확정 시험문제가 아닌 초안만 작성합니다.
+반드시 유효한 JSON 객체 하나만 반환하세요. 모든 필드 값은 문자열이어야 합니다.
+허위 판례 인용·조문 날조·법적 결론의 단정을 금지합니다.`,
         },
         { role: "user", content: prompt },
       ],
-      temperature: 0.7,
+      temperature: 0.65,
+      max_tokens: 6000,
       response_format: { type: "json_object" },
     });
 

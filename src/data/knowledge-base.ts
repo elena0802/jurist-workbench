@@ -142,3 +142,41 @@ export function estimateContextTokens(documentIds: string[]) {
     return sum + (found?.document.tokenEstimate ?? 0);
   }, 0);
 }
+
+const sourceLabels: Record<KnowledgeCollection["source"], string> = {
+  PUBLIC: "공개",
+  PROFESSOR: "교수",
+  PRIVATE: "비공개",
+};
+
+export function formatSelectedDocumentsForPrompt(documentIds: string[]) {
+  if (documentIds.length === 0) return "";
+
+  const lines: string[] = [];
+  const collections = getCollectionsForDocuments(documentIds);
+
+  for (const collection of collections) {
+    const docs = documentIds
+      .map((id) => getDocumentById(id))
+      .filter(
+        (entry): entry is NonNullable<typeof entry> =>
+          entry !== null && entry.collection.id === collection.id
+      );
+
+    if (docs.length === 0) continue;
+
+    lines.push(
+      `### ${collection.title} [${sourceLabels[collection.source]}]`,
+      collection.description,
+      "",
+      "편람 문서:",
+      ...docs.map(
+        ({ document }) =>
+          `- 「${document.title}」: ${collection.title} 소속 참고자료. 출제 양식·쟁점 전개·논점 배치의 벤치마크로 활용.`
+      ),
+      ""
+    );
+  }
+
+  return lines.join("\n").trim();
+}

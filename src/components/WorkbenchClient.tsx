@@ -51,6 +51,7 @@ export default function WorkbenchClient() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           assetIds: mapDocumentsToLegacyAssetIds(selectedDocumentIds),
+          documentIds: selectedDocumentIds,
           issueIds: selectedIssueIds,
           options,
         }),

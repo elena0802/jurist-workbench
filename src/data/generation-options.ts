@@ -16,5 +16,5 @@ export const resultSectionLabels: Record<keyof typeof outputLabels, string> = {
   examIntent: "출제의도",
   issueStructure: "쟁점 구조",
   gradingCriteria: "채점기준",
-  professorReviewMemo: "교수 검수 메모",
+  professorReviewMemo: "교수 검수 메모 · 검수 포인트",
 };

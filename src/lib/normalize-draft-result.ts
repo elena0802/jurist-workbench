@@ -87,7 +87,30 @@ function readRawDraftText(record: Record<string, unknown>): string {
 }
 
 function hasStructuredContent(record: Record<string, unknown>): boolean {
-  return SECTION_KEYS.some((key) => readAliasedField(record, key).length > 0);
+  return SECTION_KEYS.some((key) => {
+    if (key === "professorReviewMemo") {
+      return mergeProfessorReviewMemo(record).length > 0;
+    }
+    return readAliasedField(record, key).length > 0;
+  });
+}
+
+function mergeProfessorReviewMemo(record: Record<string, unknown>): string {
+  const memo = readAliasedField(record, "professorReviewMemo");
+  const points = [
+    "professorReviewPoints",
+    "professor_review_points",
+    "교수검수포인트",
+    "교수_검수_포인트",
+  ]
+    .map((key) => normalizeSectionText(record[key]))
+    .filter((text) => text.length > 0);
+
+  if (memo && points.length > 0) {
+    return [memo, ...points].join("\n\n");
+  }
+  if (memo) return memo;
+  return points.join("\n\n");
 }
 
 export function emptyGenerationResult(): GenerationResult {
@@ -122,7 +145,7 @@ export function normalizeGenerationResult(input: unknown): GenerationResult {
     examIntent: readAliasedField(record, "examIntent"),
     issueStructure: readAliasedField(record, "issueStructure"),
     gradingCriteria: readAliasedField(record, "gradingCriteria"),
-    professorReviewMemo: readAliasedField(record, "professorReviewMemo"),
+    professorReviewMemo: mergeProfessorReviewMemo(record),
   };
 
   if (hasDraftContent(structured)) {
