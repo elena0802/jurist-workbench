@@ -6,25 +6,23 @@ const workflowSteps = [
   {
     step: "01",
     title: "Knowledge Base",
+    sublabel: "지식 베이스",
     description:
-      "변호사시험·사법시험 사례형, 판례, 논문, 강의노트 등 연구 라이브러리에서 자료를 선택합니다.",
+      "변호사시험·사법시험 사례형, 판례, 논문, 강의노트 등 참고 자료를 컬렉션별로 편람합니다.",
   },
   {
     step: "02",
-    title: "법적 쟁점 선택",
+    title: "Issue Design",
+    sublabel: "평가 쟁점 설계",
     description:
-      "정당방위, 과잉방위, 오상방위 등 출제에 반영할 형사법 쟁점을 선별합니다.",
+      "정당방위, 과잉방위, 오상방위 등 출제에 반영할 평가 쟁점을 설계합니다.",
   },
   {
     step: "03",
-    title: "생성 옵션 설정",
-    description: "수업·모의시험·세미나 용도와 난이도, 출력 항목을 지정합니다.",
-  },
-  {
-    step: "04",
-    title: "초안 생성 및 검수",
+    title: "Draft",
+    sublabel: "출제 초안",
     description:
-      "사례형 문제, 출제의도, 쟁점 구조, 채점기준, 교수 검수 메모를 생성합니다.",
+      "사례형 문제, 출제의도, 쟁점 구조, 채점기준, 교수 검수 메모를 작성합니다.",
   },
 ];
 
@@ -44,7 +42,7 @@ export default function HomePage() {
           </h2>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-6 md:grid-cols-3">
           {workflowSteps.map((item) => (
             <div
               key={item.step}
@@ -56,7 +54,8 @@ export default function HomePage() {
               <h3 className="mt-3 font-serif text-lg font-medium text-ink">
                 {item.title}
               </h3>
-              <p className="mt-2 text-sm leading-relaxed text-ink-muted">
+              <p className="text-xs text-ink-faint">{item.sublabel}</p>
+              <p className="mt-3 text-sm leading-relaxed text-ink-muted">
                 {item.description}
               </p>
             </div>
@@ -74,7 +73,7 @@ export default function HomePage() {
       </section>
 
       <footer className="border-t border-border py-8 text-center text-sm text-ink-faint">
-        Jurist Workbench · 형사법 출제 워크플로 MVP
+        Jurist Workbench · 형사법 출제 워크플로
       </footer>
     </div>
   );
