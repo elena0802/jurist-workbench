@@ -55,6 +55,7 @@ export interface ReviewRequest {
   draft: GenerationResult;
   assetIds: string[];
   documentIds?: string[];
+  referenceSourceIds?: string[];
   issueIds: string[];
   options: GenerationOptions;
 }
@@ -80,6 +81,7 @@ export interface RevisionRequest {
   originalDraft: GenerationResult;
   assetIds: string[];
   documentIds?: string[];
+  referenceSourceIds?: string[];
   issueIds: string[];
   options: GenerationOptions;
   checklistItems: ReviewChecklistId[];

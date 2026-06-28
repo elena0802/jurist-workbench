@@ -37,6 +37,7 @@ export async function POST(request: Request) {
       );
     }
 
+    const referenceSourceIds = body.referenceSourceIds ?? [];
     const documentIds = body.documentIds ?? [];
     const issueIds = body.issueIds ?? [];
     const options = body.options ?? defaultOptions;
@@ -45,6 +46,7 @@ export async function POST(request: Request) {
       const fallback = buildDefaultReviewFindings(
         issueIds,
         options,
+        referenceSourceIds,
         documentIds
       );
       return NextResponse.json({
@@ -83,12 +85,19 @@ export async function POST(request: Request) {
       throw new Error("검토 응답을 해석하지 못했습니다.");
     }
 
-    let findings = normalizeReviewFindings(parsed, documentIds, issueIds);
+    let findings = normalizeReviewFindings(
+      parsed,
+      referenceSourceIds,
+      issueIds,
+      options,
+      documentIds
+    );
 
     if (findings.length < 3) {
       const fallback = buildDefaultReviewFindings(
         issueIds,
         options,
+        referenceSourceIds,
         documentIds
       );
       const existingTexts = new Set(findings.map((f) => f.finding));
@@ -99,7 +108,12 @@ export async function POST(request: Request) {
     }
 
     if (findings.length === 0) {
-      findings = buildDefaultReviewFindings(issueIds, options, documentIds);
+      findings = buildDefaultReviewFindings(
+        issueIds,
+        options,
+        referenceSourceIds,
+        documentIds
+      );
     }
 
     return NextResponse.json({ findings, source: "review" });
@@ -109,6 +123,7 @@ export async function POST(request: Request) {
     const fallback = buildDefaultReviewFindings(
       body?.issueIds ?? [],
       body?.options ?? defaultOptions,
+      body?.referenceSourceIds ?? [],
       body?.documentIds ?? []
     );
 

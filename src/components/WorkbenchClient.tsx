@@ -10,7 +10,10 @@ import type {
   WorkflowPhase,
 } from "@/types";
 import { legalIssues } from "@/data/legal-issues";
-import { getDocumentById, mapDocumentsToLegacyAssetIds } from "@/data/knowledge-base";
+import {
+  getDefaultSelectedReferenceSourceIds,
+  hasActiveReferenceSelection,
+} from "@/lib/reference-sources";
 import {
   hasDraftContent,
   normalizeGenerationResult,
@@ -65,7 +68,9 @@ type ReviewRecordSnapshot = {
 };
 
 export default function WorkbenchClient() {
-  const [selectedDocumentIds, setSelectedDocumentIds] = useState<string[]>([]);
+  const [selectedReferenceSourceIds, setSelectedReferenceSourceIds] = useState(
+    () => getDefaultSelectedReferenceSourceIds()
+  );
   const [selectedIssueIds, setSelectedIssueIds] = useState<string[]>([]);
   const [options, setOptions] = useState<GenerationOptions>(defaultOptions);
   const [draftV1, setDraftV1] = useState<GenerationResult | null>(null);
@@ -88,10 +93,11 @@ export default function WorkbenchClient() {
     useState<ReviewRecordSnapshot | null>(null);
 
   const canCompose =
-    selectedDocumentIds.length > 0 && selectedIssueIds.length > 0;
+    hasActiveReferenceSelection(selectedReferenceSourceIds) &&
+    selectedIssueIds.length > 0;
 
   const basis = {
-    documentIds: selectedDocumentIds,
+    referenceSourceIds: selectedReferenceSourceIds,
     issueIds: selectedIssueIds,
     options,
   };
@@ -104,15 +110,7 @@ export default function WorkbenchClient() {
     [selectedIssueIds]
   );
 
-  const selectedDocuments = useMemo(
-    () =>
-      selectedDocumentIds
-        .map((id) => getDocumentById(id)?.document)
-        .filter((doc): doc is NonNullable<ReturnType<typeof getDocumentById>>["document"] =>
-          Boolean(doc)
-        ),
-    [selectedDocumentIds]
-  );
+  const selectedDocuments = useMemo(() => [], []);
 
   const hasDraftV1 = hasDraftContent(draftV1);
   const hasRevisedDraft = hasDraftContent(revisedDraft);
@@ -140,7 +138,6 @@ export default function WorkbenchClient() {
     if (hasDraftV1) return "draft-review";
     if (canCompose) return "draft";
     if (selectedIssueIds.length > 0) return "issue-design";
-    if (selectedDocumentIds.length > 0) return "issue-design";
     return "knowledge-base";
   }, [
     hasRevisedDraft,
@@ -148,7 +145,6 @@ export default function WorkbenchClient() {
     hasDraftV1,
     canCompose,
     selectedIssueIds.length,
-    selectedDocumentIds.length,
   ]);
 
   const resetReviewState = () => {
@@ -176,8 +172,7 @@ export default function WorkbenchClient() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             draft,
-            assetIds: mapDocumentsToLegacyAssetIds(selectedDocumentIds),
-            documentIds: selectedDocumentIds,
+            referenceSourceIds: selectedReferenceSourceIds,
             issueIds: selectedIssueIds,
             options,
           }),
@@ -201,7 +196,7 @@ export default function WorkbenchClient() {
 
         let findings = normalizeReviewFindings(
           data.findings ?? data,
-          selectedDocumentIds,
+          selectedReferenceSourceIds,
           selectedIssueIds,
           options
         );
@@ -210,7 +205,7 @@ export default function WorkbenchClient() {
           findings = buildDefaultReviewFindings(
             selectedIssueIds,
             options,
-            selectedDocumentIds
+            selectedReferenceSourceIds
           );
           if (!data.warning) {
             setReviewWarning(
@@ -224,7 +219,7 @@ export default function WorkbenchClient() {
         const fallback = buildDefaultReviewFindings(
           selectedIssueIds,
           options,
-          selectedDocumentIds
+          selectedReferenceSourceIds
         );
         setReviewFindings(fallback);
         setReviewWarning(
@@ -234,7 +229,7 @@ export default function WorkbenchClient() {
         setIsReviewing(false);
       }
     },
-    [selectedDocumentIds, selectedIssueIds, options]
+    [selectedReferenceSourceIds, selectedIssueIds, options]
   );
 
   const handleCompose = async () => {
@@ -247,12 +242,11 @@ export default function WorkbenchClient() {
       const response = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          assetIds: mapDocumentsToLegacyAssetIds(selectedDocumentIds),
-          documentIds: selectedDocumentIds,
-          issueIds: selectedIssueIds,
-          options,
-        }),
+          body: JSON.stringify({
+            referenceSourceIds: selectedReferenceSourceIds,
+            issueIds: selectedIssueIds,
+            options,
+          }),
       });
 
       let data: { result?: unknown; error?: string };
@@ -330,8 +324,7 @@ export default function WorkbenchClient() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           originalDraft: draftV1,
-          assetIds: mapDocumentsToLegacyAssetIds(selectedDocumentIds),
-          documentIds: selectedDocumentIds,
+          referenceSourceIds: selectedReferenceSourceIds,
           issueIds: selectedIssueIds,
           options,
           checklistItems: checklistIds,
@@ -460,8 +453,8 @@ export default function WorkbenchClient() {
         <div className="grid gap-8 lg:grid-cols-[1fr_300px]">
           <div className="min-w-0 space-y-8">
             <KnowledgeBaseBrowser
-              selectedDocumentIds={selectedDocumentIds}
-              onDocumentChange={setSelectedDocumentIds}
+              selectedReferenceSourceIds={selectedReferenceSourceIds}
+              onReferenceChange={setSelectedReferenceSourceIds}
             />
 
             <IssueDesign
@@ -555,7 +548,7 @@ export default function WorkbenchClient() {
 
           <div className="hidden lg:block">
             <CurrentDraft
-              selectedDocumentIds={selectedDocumentIds}
+              selectedReferenceSourceIds={selectedReferenceSourceIds}
               selectedIssueIds={selectedIssueIds}
               options={options}
               hasDraft={hasDraftV1 || hasRevisedDraft}
@@ -570,7 +563,7 @@ export default function WorkbenchClient() {
 
         <div className="mt-8 lg:hidden">
           <CurrentDraft
-            selectedDocumentIds={selectedDocumentIds}
+            selectedReferenceSourceIds={selectedReferenceSourceIds}
             selectedIssueIds={selectedIssueIds}
             options={options}
             hasDraft={hasDraftV1 || hasRevisedDraft}

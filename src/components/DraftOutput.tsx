@@ -3,8 +3,9 @@
 import { useMemo, useState } from "react";
 import type { GenerationOptions, GenerationResult } from "@/types";
 import { resultSectionLabels } from "@/data/generation-options";
-import { getDocumentById } from "@/data/knowledge-base";
+import { referenceCategoryLabels } from "@/data/reference-sources";
 import { legalIssues } from "@/data/legal-issues";
+import { summarizeReferenceSourcesByCategory } from "@/lib/reference-sources";
 import {
   getVisibleDraftSections,
   hasDraftContent,
@@ -16,7 +17,7 @@ import {
 } from "@/lib/format-draft-content";
 
 interface DraftBasis {
-  documentIds: string[];
+  referenceSourceIds: string[];
   issueIds: string[];
   options: GenerationOptions;
 }
@@ -34,12 +35,9 @@ interface DraftOutputProps {
 }
 
 function DraftBasisBox({ basis }: { basis: DraftBasis }) {
-  const documents = useMemo(
-    () =>
-      basis.documentIds
-        .map((id) => getDocumentById(id))
-        .filter((entry): entry is NonNullable<typeof entry> => entry !== null),
-    [basis.documentIds]
+  const referenceCounts = useMemo(
+    () => summarizeReferenceSourcesByCategory(basis.referenceSourceIds),
+    [basis.referenceSourceIds]
   );
 
   const issues = useMemo(
@@ -60,21 +58,29 @@ function DraftBasisBox({ basis }: { basis: DraftBasis }) {
       <dl className="mt-3 grid gap-4 sm:grid-cols-3">
         <div>
           <dt className="text-[10px] font-medium text-ink-faint">참고 자료</dt>
-          <dd className="mt-1.5 space-y-1">
-            {documents.length === 0 ? (
-              <span className="text-xs italic text-ink-faint">—</span>
-            ) : (
-              documents.map(({ document, collection }) => (
-                <div key={document.id} className="text-xs leading-snug">
-                  <span className="text-ink-muted">{document.title}</span>
-                  <span className="mt-0.5 block text-[10px] text-ink-faint">
-                    {collection.title}
-                    {document.year ? ` · ${document.year}` : ""}
-                    {` · ${document.pageCount}쪽`}
-                  </span>
-                </div>
-              ))
+          <dd className="mt-1.5 space-y-1 text-xs text-ink-muted">
+            {referenceCounts["official-exam"] > 0 && (
+              <div>
+                · {referenceCategoryLabels["official-exam"]}{" "}
+                {referenceCounts["official-exam"]}개
+              </div>
             )}
+            {referenceCounts.precedent > 0 && (
+              <div>
+                · {referenceCategoryLabels.precedent} {referenceCounts.precedent}
+                개
+              </div>
+            )}
+            {referenceCounts["professor-knowledge"] > 0 && (
+              <div>
+                · {referenceCategoryLabels["professor-knowledge"]}{" "}
+                {referenceCounts["professor-knowledge"]}개
+              </div>
+            )}
+            {referenceCounts["official-exam"] +
+              referenceCounts.precedent +
+              referenceCounts["professor-knowledge"] ===
+              0 && <span className="italic text-ink-faint">—</span>}
           </dd>
         </div>
 

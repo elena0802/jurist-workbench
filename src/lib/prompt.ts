@@ -1,7 +1,7 @@
 import type { GenerationRequest } from "@/types";
-import { educationalAssets } from "@/data/educational-assets";
 import { legalIssues } from "@/data/legal-issues";
 import { formatSelectedDocumentsForPrompt } from "@/data/knowledge-base";
+import { formatReferenceSourcesForPrompt } from "@/lib/reference-sources";
 import { outputLabels } from "@/data/generation-options";
 
 function difficultyGuidance(difficulty: GenerationRequest["options"]["difficulty"]) {
@@ -39,27 +39,12 @@ export function buildGenerationPrompt(request: GenerationRequest): string {
     )
     .join("\n");
 
-  const documentBlock = formatSelectedDocumentsForPrompt(
-    request.documentIds ?? []
-  );
-
-  const legacyAssets = educationalAssets.filter((asset) =>
-    request.assetIds.includes(asset.id)
-  );
-  const legacyAssetBlock =
-    legacyAssets.length > 0 && !documentBlock
-      ? legacyAssets
-          .map(
-            (asset) =>
-              `- ${asset.title} (${asset.category}): ${asset.description}`
-          )
-          .join("\n")
-      : "";
+  const documentBlock =
+    formatReferenceSourcesForPrompt(request.referenceSourceIds ?? []) ||
+    formatSelectedDocumentsForPrompt(request.documentIds ?? []);
 
   const referenceBlock =
-    documentBlock ||
-    legacyAssetBlock ||
-    "(참고 자료 목록 없음 — 선택된 쟁점 중심으로 작성)";
+    documentBlock || "(참고 자료 목록 없음 — 선택된 쟁점 중심으로 작성)";
 
   const enabledOutputs = (
     Object.entries(request.options.outputs) as Array<

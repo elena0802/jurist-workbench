@@ -9,6 +9,20 @@ import {
   parseDraftResponseContent,
 } from "@/lib/normalize-draft-result";
 
+import { hasActiveReferenceSelection } from "@/lib/reference-sources";
+
+function requestHasReference(body: {
+  referenceSourceIds?: string[];
+  documentIds?: string[];
+  assetIds?: string[];
+}) {
+  return (
+    hasActiveReferenceSelection(body.referenceSourceIds ?? []) ||
+    (body.documentIds?.length ?? 0) > 0 ||
+    (body.assetIds?.length ?? 0) > 0
+  );
+}
+
 function getOpenAIClient() {
   return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 }
@@ -27,10 +41,7 @@ export async function POST(request: Request) {
 
     const body = (await request.json()) as GenerationRequest;
 
-    if (
-      (!body.assetIds?.length && !body.documentIds?.length) ||
-      !body.issueIds?.length
-    ) {
+    if (!requestHasReference(body) || !body.issueIds?.length) {
       return NextResponse.json(
         {
           error:

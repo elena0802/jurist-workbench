@@ -5,6 +5,7 @@ import {
   formatSelectedDocumentsForPrompt,
   getDocumentById,
 } from "@/data/knowledge-base";
+import { getReferenceLabels, formatReferenceSourcesForPrompt } from "@/lib/reference-sources";
 import { outputLabels } from "@/data/generation-options";
 import { buildDraftPlainText } from "@/lib/format-draft-content";
 import { getRelevantRules } from "@/lib/rule-matching";
@@ -18,13 +19,16 @@ export function buildReviewPrompt(request: ReviewRequest): string {
     .map((issue) => `- ${issue.name} [${issue.category}]: ${issue.description}`)
     .join("\n");
 
-  const documentTitles = (request.documentIds ?? [])
-    .map((id) => getDocumentById(id)?.document.title)
-    .filter((title): title is string => Boolean(title));
+  const documentTitles =
+    getReferenceLabels(request.referenceSourceIds ?? []).length > 0
+      ? getReferenceLabels(request.referenceSourceIds ?? [])
+      : (request.documentIds ?? [])
+          .map((id) => getDocumentById(id)?.document.title)
+          .filter((title): title is string => Boolean(title));
 
-  const referenceBlock = formatSelectedDocumentsForPrompt(
-    request.documentIds ?? []
-  );
+  const referenceBlock =
+    formatReferenceSourcesForPrompt(request.referenceSourceIds ?? []) ||
+    formatSelectedDocumentsForPrompt(request.documentIds ?? []);
 
   const enabledOutputs = (
     Object.entries(request.options.outputs) as Array<

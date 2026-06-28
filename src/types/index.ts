@@ -59,6 +59,7 @@ export interface GenerationOptions {
 export interface GenerationRequest {
   assetIds: string[];
   documentIds?: string[];
+  referenceSourceIds?: string[];
   issueIds: string[];
   options: GenerationOptions;
 }

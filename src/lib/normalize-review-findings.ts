@@ -8,6 +8,7 @@ import type {
 } from "@/types";
 import { legalIssues } from "@/data/legal-issues";
 import { getDocumentById } from "@/data/knowledge-base";
+import { getReferenceLabels } from "@/lib/reference-sources";
 import {
   buildDefaultAppliedRules,
   getRelevantRules,
@@ -37,6 +38,15 @@ export function getDocumentTitles(documentIds: string[]): string[] {
   return documentIds
     .map((id) => getDocumentById(id)?.document.title)
     .filter((title): title is string => Boolean(title));
+}
+
+export function getReferenceTitles(
+  referenceSourceIds: string[] = [],
+  documentIds: string[] = []
+): string[] {
+  const referenceLabels = getReferenceLabels(referenceSourceIds);
+  if (referenceLabels.length > 0) return referenceLabels;
+  return getDocumentTitles(documentIds);
 }
 
 function coerceSeverity(value: unknown): ReviewFindingSeverity {
@@ -144,13 +154,14 @@ function finalizeFinding(
 export function buildDefaultReviewFindings(
   issueIds: string[],
   options: GenerationOptions,
+  referenceSourceIds: string[] = [],
   documentIds: string[] = []
 ): ReviewFinding[] {
   const issues = issueIds
     .map((id) => legalIssues.find((issue) => issue.id === id))
     .filter((issue): issue is NonNullable<typeof issue> => issue !== undefined);
 
-  const documentTitles = getDocumentTitles(documentIds);
+  const documentTitles = getReferenceTitles(referenceSourceIds, documentIds);
   const issueNames = issues.map((i) => i.name);
   const docRef = (index: number) =>
     documentTitles[index] ?? documentTitles[0] ?? "선택 참고 자료";
@@ -301,7 +312,7 @@ export function buildDefaultReviewFindings(
 
 export function normalizeReviewFindings(
   input: unknown,
-  documentIds: string[] = [],
+  referenceSourceIds: string[] = [],
   issueIds: string[] = [],
   options: GenerationOptions = {
     purpose: "모의시험",
@@ -313,11 +324,12 @@ export function normalizeReviewFindings(
       gradingCriteria: true,
       professorReviewMemo: true,
     },
-  }
+  },
+  documentIds: string[] = []
 ): ReviewFinding[] {
   if (!input) return [];
 
-  const documentTitles = getDocumentTitles(documentIds);
+  const documentTitles = getReferenceTitles(referenceSourceIds, documentIds);
   const issueNames = issueIds
     .map((id) => legalIssues.find((i) => i.id === id)?.name)
     .filter((name): name is string => Boolean(name));

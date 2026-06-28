@@ -2,6 +2,7 @@ import type { RevisionRequest } from "@/types";
 import { checklistInstructionMap } from "@/data/review-checklist";
 import { legalIssues } from "@/data/legal-issues";
 import { formatSelectedDocumentsForPrompt } from "@/data/knowledge-base";
+import { formatReferenceSourcesForPrompt } from "@/lib/reference-sources";
 import { outputLabels } from "@/data/generation-options";
 import { buildDraftPlainText } from "@/lib/format-draft-content";
 import { ruleStatusLabel } from "@/lib/rule-matching";
@@ -31,9 +32,9 @@ export function buildRevisionPrompt(request: RevisionRequest): string {
     .map((issue) => `- ${issue.name} [${issue.category}]: ${issue.description}`)
     .join("\n");
 
-  const referenceBlock = formatSelectedDocumentsForPrompt(
-    request.documentIds ?? []
-  );
+  const referenceBlock =
+    formatReferenceSourcesForPrompt(request.referenceSourceIds ?? []) ||
+    formatSelectedDocumentsForPrompt(request.documentIds ?? []);
 
   const checklistInstructions = request.checklistItems
     .map((id) => `- ${checklistInstructionMap[id]}`)

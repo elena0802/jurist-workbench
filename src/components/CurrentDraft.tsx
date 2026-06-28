@@ -2,16 +2,13 @@
 
 import { useMemo } from "react";
 import type { GenerationOptions, WorkflowPhase } from "@/types";
-import {
-  estimateContextPages,
-  getCollectionsForDocuments,
-  getDocumentById,
-} from "@/data/knowledge-base";
+import { referenceCategoryLabels } from "@/data/reference-sources";
 import { legalIssues } from "@/data/legal-issues";
 import { outputLabels } from "@/data/generation-options";
+import { summarizeReferenceSourcesByCategory } from "@/lib/reference-sources";
 
 interface CurrentDraftProps {
-  selectedDocumentIds: string[];
+  selectedReferenceSourceIds: string[];
   selectedIssueIds: string[];
   options: GenerationOptions;
   hasDraft: boolean;
@@ -22,13 +19,8 @@ interface CurrentDraftProps {
   ruleReviewComplete?: boolean;
 }
 
-function formatVolume(documentIds: string[]) {
-  const pages = estimateContextPages(documentIds);
-  return pages > 0 ? `약 ${pages}쪽` : "—";
-}
-
 export default function CurrentDraft({
-  selectedDocumentIds,
+  selectedReferenceSourceIds,
   selectedIssueIds,
   options,
   hasDraft,
@@ -38,20 +30,15 @@ export default function CurrentDraft({
   violatedRuleCount = 0,
   ruleReviewComplete = false,
 }: CurrentDraftProps) {
-  const selectedCollections = getCollectionsForDocuments(selectedDocumentIds);
+  const referenceCounts = useMemo(
+    () => summarizeReferenceSourcesByCategory(selectedReferenceSourceIds),
+    [selectedReferenceSourceIds]
+  );
 
-  const documentsByCollection = useMemo(() => {
-    return selectedCollections.map((collection) => ({
-      collection,
-      documents: selectedDocumentIds
-        .map((id) => getDocumentById(id))
-        .filter(
-          (entry): entry is NonNullable<typeof entry> =>
-            entry !== null && entry.collection.id === collection.id
-        )
-        .map((entry) => entry.document),
-    }));
-  }, [selectedCollections, selectedDocumentIds]);
+  const totalReferences =
+    referenceCounts["official-exam"] +
+    referenceCounts.precedent +
+    referenceCounts["professor-knowledge"];
 
   const selectedIssues = useMemo(
     () =>
@@ -70,9 +57,7 @@ export default function CurrentDraft({
     .map(([key]) => outputLabels[key]);
 
   const isEmpty =
-    selectedDocumentIds.length === 0 &&
-    selectedIssueIds.length === 0 &&
-    !hasDraft;
+    totalReferences === 0 && selectedIssueIds.length === 0 && !hasDraft;
 
   return (
     <aside className="academic-shadow sticky top-6 rounded-sm border border-border bg-paper text-[13px]">
@@ -99,7 +84,7 @@ export default function CurrentDraft({
                       : hasDraft
                         ? "검수 대기 중"
                         : isEmpty
-                          ? "지식 베이스와 평가 쟁점을 지정하세요"
+                          ? "평가 쟁점을 설계하세요"
                           : "초안 작성 준비됨"}
         </p>
       </div>
@@ -107,7 +92,7 @@ export default function CurrentDraft({
       {isEmpty && (
         <div className="border-b border-border/80 bg-paper-dark/30 px-3.5 py-2.5">
           <ol className="space-y-1 text-[11px] leading-relaxed text-ink-muted">
-            <li>1. 참고 자료 편람</li>
+            <li>1. 참고 자료 확인</li>
             <li>2. 평가 쟁점 설계</li>
             <li>3. 출제 초안 작성</li>
             <li>4. 초안 검토</li>
@@ -120,26 +105,27 @@ export default function CurrentDraft({
       <div className="divide-y divide-border/80">
         <DraftSection
           title="참고 자료"
-          count={selectedDocumentIds.length}
-          emptyText="편람된 문서 없음"
+          count={totalReferences}
+          emptyText="참고 자료 없음"
         >
-          {documentsByCollection.map(({ collection, documents }) => (
-            <li key={collection.id} className="space-y-1">
-              <p className="text-[10px] font-medium tracking-wide text-ink-faint">
-                {collection.title}
-              </p>
-              <ul className="space-y-0.5 border-l border-border-dark/60 pl-2">
-                {documents.map((doc) => (
-                  <li
-                    key={doc.id}
-                    className="text-[12px] leading-snug text-ink-muted"
-                  >
-                    {doc.title}
-                  </li>
-                ))}
-              </ul>
+          {referenceCounts["official-exam"] > 0 && (
+            <li className="text-[12px] text-ink-muted">
+              · {referenceCategoryLabels["official-exam"]}{" "}
+              {referenceCounts["official-exam"]}개
             </li>
-          ))}
+          )}
+          {referenceCounts.precedent > 0 && (
+            <li className="text-[12px] text-ink-muted">
+              · {referenceCategoryLabels.precedent} {referenceCounts.precedent}
+              개
+            </li>
+          )}
+          {referenceCounts["professor-knowledge"] > 0 && (
+            <li className="text-[12px] text-ink-muted">
+              · {referenceCategoryLabels["professor-knowledge"]}{" "}
+              {referenceCounts["professor-knowledge"]}개
+            </li>
+          )}
         </DraftSection>
 
         <DraftSection
@@ -189,19 +175,6 @@ export default function CurrentDraft({
             </li>
           )}
         </DraftSection>
-
-        {selectedDocumentIds.length > 0 && (
-          <div className="px-3.5 py-2.5">
-            <div className="flex items-baseline justify-between">
-              <span className="text-[10px] font-medium text-ink-faint">
-                참고 분량
-              </span>
-              <span className="font-serif text-sm text-ink">
-                {formatVolume(selectedDocumentIds)}
-              </span>
-            </div>
-          </div>
-        )}
 
         {hasDraft && (
           <div className="border-t border-border/80 bg-paper-dark/30 px-3.5 py-2 space-y-0.5">
