@@ -104,26 +104,39 @@ export default function CurrentDraft({
 
       <div className="divide-y divide-border/80">
         <DraftSection
-          title="참고 자료"
+          title="기본 참고자료"
           count={totalReferences}
           emptyText="참고 자료 없음"
+          hideCount
         >
           {referenceCounts["official-exam"] > 0 && (
-            <li className="text-[12px] text-ink-muted">
-              · {referenceCategoryLabels["official-exam"]}{" "}
-              {referenceCounts["official-exam"]}개
+            <li>
+              <p className="text-[12px] font-medium text-ink-muted">
+                {referenceCategoryLabels["official-exam"]}
+              </p>
+              <p className="mt-0.5 text-[10px] text-ink-faint">
+                {referenceCounts["official-exam"]}개 포함
+              </p>
             </li>
           )}
           {referenceCounts.precedent > 0 && (
-            <li className="text-[12px] text-ink-muted">
-              · {referenceCategoryLabels.precedent} {referenceCounts.precedent}
-              개
+            <li>
+              <p className="text-[12px] font-medium text-ink-muted">
+                {referenceCategoryLabels.precedent}
+              </p>
+              <p className="mt-0.5 text-[10px] text-ink-faint">
+                {referenceCounts.precedent}개 포함
+              </p>
             </li>
           )}
           {referenceCounts["professor-knowledge"] > 0 && (
-            <li className="text-[12px] text-ink-muted">
-              · {referenceCategoryLabels["professor-knowledge"]}{" "}
-              {referenceCounts["professor-knowledge"]}개
+            <li>
+              <p className="text-[12px] font-medium text-ink-muted">
+                {referenceCategoryLabels["professor-knowledge"]}
+              </p>
+              <p className="mt-0.5 text-[10px] text-ink-faint">
+                {referenceCounts["professor-knowledge"]}개 포함
+              </p>
             </li>
           )}
         </DraftSection>
@@ -221,12 +234,14 @@ function DraftSection({
   emptyText,
   children,
   hideWhenEmpty,
+  hideCount = false,
 }: {
   title: string;
   count: number;
   emptyText: string;
   children: React.ReactNode;
   hideWhenEmpty?: boolean;
+  hideCount?: boolean;
 }) {
   if (hideWhenEmpty && count === 0) return null;
 
@@ -238,7 +253,7 @@ function DraftSection({
         <h3 className="text-[10px] font-semibold tracking-[0.06em] text-ink-faint">
           {title}
         </h3>
-        {!isEmpty && (
+        {!isEmpty && !hideCount && (
           <span className="text-[10px] tabular-nums text-ink-faint">
             {count}
           </span>

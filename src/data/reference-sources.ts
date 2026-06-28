@@ -18,7 +18,7 @@ export const referenceCategoryLabels: Record<ReferenceCategory, string> = {
   "official-exam": "공식 시험 문항",
   precedent: "판례",
   "professor-knowledge": "교수 지식",
-  future: "향후 확장",
+  future: "추후 구축 예정",
 };
 
 export const referenceSources: ReferenceSource[] = [

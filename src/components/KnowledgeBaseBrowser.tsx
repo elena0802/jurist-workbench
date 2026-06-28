@@ -1,13 +1,14 @@
 "use client";
 
-import {
-  groupReferenceSourcesByCategory,
-} from "@/lib/reference-sources";
+import { groupReferenceSourcesByCategory } from "@/lib/reference-sources";
 
 interface KnowledgeBaseBrowserProps {
   selectedReferenceSourceIds: string[];
   onReferenceChange: (ids: string[]) => void;
 }
+
+const checkboxClassName =
+  "mt-0.5 h-3 w-3 shrink-0 rounded-sm border border-ink/20 bg-paper accent-accent/50 focus:outline-none focus:ring-0 cursor-default disabled:cursor-not-allowed disabled:border-ink/10 disabled:bg-paper-dark/30";
 
 export default function KnowledgeBaseBrowser({
   selectedReferenceSourceIds,
@@ -38,65 +39,62 @@ export default function KnowledgeBaseBrowser({
           지식 베이스
         </h2>
         <p className="mt-1 text-xs leading-relaxed text-ink-muted">
-          출제안 검토 시 기본적으로 아래 자료를 함께 참고합니다. 필요한 경우
-          특정 자료만 제외할 수 있습니다.
+          출제안 작성 및 검토 시 아래 자료를 기본 참고합니다.
         </p>
       </div>
 
-      <div className="divide-y divide-border/80">
-        {grouped.map(({ category, label, sources }) => (
-          <div key={category} className="px-4 py-3">
-            <h3
-              className={`mb-2 text-[11px] font-medium tracking-wide ${
-                category === "future" ? "text-ink-faint" : "text-ink-faint"
+      <div>
+        {grouped.map(({ category, label, sources }, index) => {
+          const isFuture = category === "future";
+
+          return (
+            <div
+              key={category}
+              className={`px-4 py-3.5 ${
+                index > 0 ? "border-t border-border/70" : ""
               }`}
             >
-              {label}
-            </h3>
-            <ul className="space-y-1">
-              {sources.map((source) => {
-                const isDisabled = Boolean(source.disabled) || !source.enabled;
-                const isChecked = isDisabled
-                  ? source.checkedByDefault
-                  : selectedReferenceSourceIds.includes(source.id);
+              <h3
+                className={`mb-2.5 font-serif text-[12px] font-semibold tracking-wide ${
+                  isFuture ? "text-ink-faint" : "text-ink"
+                }`}
+              >
+                {label}
+              </h3>
+              {isFuture && (
+                <p className="mb-2 text-[10px] text-ink-faint">준비 중</p>
+              )}
+              <ul className="space-y-2">
+                {sources.map((source) => {
+                  const isInactive = Boolean(source.disabled) || !source.enabled;
+                  const isChecked =
+                    !isInactive && selectedReferenceSourceIds.includes(source.id);
 
-                return (
-                  <li key={source.id}>
-                    <label
-                      className={`flex items-start gap-2.5 rounded-sm px-1 py-1.5 transition-colors ${
-                        isDisabled
-                          ? "cursor-not-allowed opacity-60"
-                          : "cursor-pointer hover:bg-highlight/40"
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={isChecked}
-                        disabled={isDisabled}
-                        onChange={() => toggleSource(source.id, isDisabled)}
-                        className="mt-0.5 h-3.5 w-3.5 accent-accent disabled:opacity-70"
-                      />
-                      <span className="min-w-0 flex-1">
+                  return (
+                    <li key={source.id}>
+                      <label className="flex items-start gap-2.5 px-0.5 py-0.5">
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          disabled={isInactive}
+                          onChange={() => toggleSource(source.id, isInactive)}
+                          className={checkboxClassName}
+                        />
                         <span
-                          className={`text-[13px] leading-snug ${
-                            isDisabled ? "text-ink-faint" : "text-ink-muted"
+                          className={`min-w-0 flex-1 text-[13px] leading-snug ${
+                            isInactive ? "text-ink-faint/80" : "text-ink-muted"
                           }`}
                         >
                           {source.label}
                         </span>
-                        {source.note && (
-                          <span className="ml-1.5 text-[10px] text-ink-faint">
-                            {source.note}
-                          </span>
-                        )}
-                      </span>
-                    </label>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        ))}
+                      </label>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          );
+        })}
       </div>
     </section>
   );
